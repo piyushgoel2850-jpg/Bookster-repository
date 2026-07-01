@@ -40,7 +40,18 @@ export const Library: React.FC = () => {
 
   // Finished book reflection note states
   const [finishedBookForReflection, setFinishedBookForReflection] = useState<UserBook | null>(null);
+  const [finishedBookStep, setFinishedBookStep] = useState<'options' | 'text' | 'video' | 'success'>('options');
   const [reflectionNoteText, setReflectionNoteText] = useState('');
+  const [isVideoRecordingReview, setIsVideoRecordingReview] = useState(false);
+  const [videoRecordedReview, setVideoRecordedReview] = useState(false);
+
+  // Interactive Self-Reflection overlays for logging >= 5 pages
+  const [activeBookForSelfReflection, setActiveBookForSelfReflection] = useState<UserBook | null>(null);
+  const [pagesLoggedForSelfReflection, setPagesLoggedForSelfReflection] = useState<number>(0);
+  const [selfReflectionStep, setSelfReflectionStep] = useState<'options' | 'text' | 'voice'>('options');
+  const [selfReflectionText, setSelfReflectionText] = useState('');
+  const [isRecordingVoiceSelfReflection, setIsRecordingVoiceSelfReflection] = useState(false);
+  const [voiceRecordedSelfReflection, setVoiceRecordedSelfReflection] = useState(false);
 
   const handleSearchBooks = async (query: string) => {
     setSearchQuery(query);
@@ -154,40 +165,100 @@ export const Library: React.FC = () => {
       // Refresh Stats immediately in GameContext
       await refreshStats();
 
-      // Show immediate success popup
-      setXpGainedSession(xpEarned);
-      setShowLogSuccess(true);
-
       const finalBookRef = { ...activeBookToLog, current_page: newPages, progress_percent: newPercent };
 
       // Reset active book logging flow
       setActiveBookToLog(null);
       setPagesLogged('');
+      fetchLibraryData();
 
-      // Auto dismiss success screen after 2.5 seconds
-      setTimeout(() => {
-        setShowLogSuccess(false);
-        fetchLibraryData();
-
-        // If completed progress, trigger the Finished Book Reflection prompt
-        if (newPercent >= 100) {
-          setFinishedBookForReflection(finalBookRef);
-        }
-      }, 2500);
+      // Check if logged >= 5 pages: trigger interactive self-reflection check
+      if (pagesNum >= 5) {
+        setPagesLoggedForSelfReflection(pagesNum);
+        setActiveBookForSelfReflection(finalBookRef);
+        setSelfReflectionStep('options');
+        setSelfReflectionText('');
+        setVoiceRecordedSelfReflection(false);
+        setIsRecordingVoiceSelfReflection(false);
+      } else {
+        // Show immediate success popup
+        setXpGainedSession(xpEarned);
+        setShowLogSuccess(true);
+        setTimeout(() => {
+          setShowLogSuccess(false);
+          if (newPercent >= 100) {
+            setFinishedBookStep('options');
+            setFinishedBookForReflection(finalBookRef);
+          }
+        }, 2500);
+      }
 
     } catch (e) {
       console.error('Error logging page progress:', e);
     }
   };
 
-  const handleSaveReflectionSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile || !finishedBookForReflection || !reflectionNoteText.trim()) return;
+  const handleSaveSelfReflection = async (type: 'text' | 'voice' | 'skip') => {
+    if (!profile || !activeBookForSelfReflection) return;
 
     try {
-      await db.addBookReflection(profile.id, finishedBookForReflection.id, reflectionNoteText);
+      const baseXP = pagesLoggedForSelfReflection * 10;
+      let totalXPEarned = baseXP;
+
+      if (type !== 'skip') {
+        const textVal = type === 'text' ? selfReflectionText : 'Recorded Voice note summaries';
+        await db.addBookReflection(profile.id, activeBookForSelfReflection.id, type, textVal);
+        
+        // Reflection bonus: +20 XP
+        await db.addXP(profile.id, 20, 'book-reflection-bonus');
+        await refreshStats();
+        totalXPEarned += 20;
+      }
+
+      const finalBook = activeBookForSelfReflection;
+      setActiveBookForSelfReflection(null);
+
+      // Show success screen with total XP gained (base + reflection bonus if any)
+      setXpGainedSession(totalXPEarned);
+      setShowLogSuccess(true);
+
+      setTimeout(() => {
+        setShowLogSuccess(false);
+        fetchLibraryData();
+
+        if (finalBook.progress_percent >= 100) {
+          setFinishedBookStep('options');
+          setFinishedBookForReflection(finalBook);
+        }
+      }, 2500);
+
+    } catch (err) {
+      console.error('Error saving self reflection:', err);
+    }
+  };
+
+  const handleSaveReflectionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile || !finishedBookForReflection) return;
+
+    try {
+      if (finishedBookStep === 'text') {
+        if (!reflectionNoteText.trim()) return;
+        await db.addBookReflection(profile.id, finishedBookForReflection.id, 'text', reflectionNoteText);
+        // Award standard completion bonus: +20 XP
+        await db.addXP(profile.id, 20, 'book-completed-reflection');
+      } else if (finishedBookStep === 'video') {
+        if (!videoRecordedReview) return;
+        await db.addBookReflection(profile.id, finishedBookForReflection.id, 'video', '', 'Video Review Stub');
+        // Award Video Review completion bonus: +50 XP!
+        await db.addXP(profile.id, 50, 'book-completed-video-review');
+      }
+
+      await refreshStats();
       setFinishedBookForReflection(null);
       setReflectionNoteText('');
+      setVideoRecordedReview(false);
+      setIsVideoRecordingReview(false);
       fetchLibraryData();
     } catch (e) {
       console.error('Error saving book reflection:', e);
@@ -587,9 +658,9 @@ export const Library: React.FC = () => {
         </div>
       )}
 
-      {/* Finished Book Gentle Reflection Journal (Skippable, 1-tap, no guilt) */}
+      {/* Finished Book Gentle Reflection Journal / Video Review (Skippable, 1-tap, no guilt) */}
       {finishedBookForReflection && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-6 select-none">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-6 select-none animate-in fade-in duration-200">
           <form
             onSubmit={handleSaveReflectionSubmit}
             className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm text-center space-y-5 shadow-2xl relative"
@@ -600,43 +671,314 @@ export const Library: React.FC = () => {
               <p className="text-slate-400 text-xs">"{finishedBookForReflection.title}" is complete!</p>
             </div>
 
-            <div className="space-y-2 text-left">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
-                Your Reading Journal (Optional)
-              </label>
-              <textarea
-                placeholder="Want to jot a quick thought about it before you move on?"
-                value={reflectionNoteText}
-                onChange={(e) => setReflectionNoteText(e.target.value)}
-                className="w-full h-24 bg-slate-950 border border-slate-850 text-slate-100 rounded-2xl p-3.5 text-xs focus:border-orange-500 outline-none resize-none leading-relaxed"
-              />
+            {/* Step 1: Select Reflection Mode */}
+            {finishedBookStep === 'options' && (
+              <div className="space-y-3 pt-2 text-left">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center pl-1 mb-2">
+                  Choose how to capture your thoughts:
+                </p>
+                
+                <button
+                  type="button"
+                  onClick={() => setFinishedBookStep('text')}
+                  className="w-full p-4 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-orange-500/50 transition rounded-2xl flex items-center gap-3 cursor-pointer"
+                >
+                  <span className="text-2xl">✍️</span>
+                  <div>
+                    <h4 className="text-xs font-black text-white">Write Reflection</h4>
+                    <p className="text-[10px] text-slate-500 font-medium">Jot a quick thought. (+20 XP)</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFinishedBookStep('video')}
+                  className="w-full p-4 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-orange-500/50 transition rounded-2xl flex items-center gap-3 cursor-pointer"
+                >
+                  <span className="text-2xl">🎥</span>
+                  <div>
+                    <h4 className="text-xs font-black text-white">Record Video Review</h4>
+                    <p className="text-[10px] text-orange-400 font-medium">Unlock exclusive video reviews! (+50 XP! 🏆)</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFinishedBookForReflection(null);
+                    setReflectionNoteText('');
+                  }}
+                  className="w-full text-slate-500 hover:text-slate-400 text-xs font-bold transition py-2 text-center cursor-pointer"
+                >
+                  Skip and Continue (No pressure!)
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: Write Reflection Notes */}
+            {finishedBookStep === 'text' && (
+              <div className="space-y-4 pt-2 text-left">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
+                    Your Reading Journal Notes (+20 XP)
+                  </label>
+                  <textarea
+                    placeholder="Want to jot a quick thought about it before you move on?"
+                    value={reflectionNoteText}
+                    onChange={(e) => setReflectionNoteText(e.target.value)}
+                    className="w-full h-24 bg-slate-950 border border-slate-850 text-slate-100 rounded-2xl p-3.5 text-xs focus:border-orange-500 outline-none resize-none leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setFinishedBookStep('options')}
+                    className="px-4 py-3 bg-slate-950 border border-slate-850 text-slate-400 font-bold rounded-2xl text-xs cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!reflectionNoteText.trim()}
+                    className={`flex-1 py-3 font-black rounded-2xl text-xs cursor-pointer text-center transition ${
+                      reflectionNoteText.trim()
+                        ? 'bg-orange-500 hover:bg-orange-400 text-white shadow-xl shadow-orange-500/10'
+                        : 'bg-slate-950 text-slate-600 border border-slate-850 cursor-not-allowed'
+                    }`}
+                  >
+                    Save to Journal
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Video Review Recorder */}
+            {finishedBookStep === 'video' && (
+              <div className="space-y-4 pt-2">
+                <div className="p-6 bg-slate-950 rounded-2xl border border-slate-850 flex flex-col items-center justify-center min-h-[140px]">
+                  {isVideoRecordingReview ? (
+                    <div className="space-y-3 text-center">
+                      <div className="flex items-center gap-2 justify-center">
+                        <span className="w-3.5 h-3.5 bg-red-500 rounded-full animate-ping" />
+                        <span className="text-red-500 text-xs font-black uppercase tracking-wider">● Recording Review...</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500">Record a summary explaining your favorite parts!</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsVideoRecordingReview(false);
+                          setVideoRecordedReview(true);
+                        }}
+                        className="px-4 py-2 bg-red-500/20 text-red-400 text-[10px] font-black border border-red-500/30 rounded-xl"
+                      >
+                        Stop & Capture Review
+                      </button>
+                    </div>
+                  ) : videoRecordedReview ? (
+                    <div className="space-y-3 text-center">
+                      <span className="text-4xl block">🎥✅</span>
+                      <p className="text-[10px] text-emerald-400 font-black uppercase tracking-wider">Video Review Captured!</p>
+                      <p className="text-[9px] text-slate-500">Captured: 15s review clip</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-[10px] text-slate-400 font-medium">Record a 15-30s video sharing your summary & final rating.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsVideoRecordingReview(true);
+                          setVideoRecordedReview(false);
+                        }}
+                        className="w-14 h-14 rounded-full bg-orange-500 hover:bg-orange-400 flex items-center justify-center text-xl shadow-lg cursor-pointer text-white mx-auto animate-pulse"
+                      >
+                        📹
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFinishedBookStep('options')}
+                    className="px-4 py-3 bg-slate-950 border border-slate-850 text-slate-400 font-bold rounded-2xl text-xs cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!videoRecordedReview}
+                    className={`flex-1 py-3 font-black rounded-2xl text-xs cursor-pointer text-center transition ${
+                      videoRecordedReview
+                        ? 'bg-orange-500 hover:bg-orange-400 text-white shadow-xl shadow-orange-500/10'
+                        : 'bg-slate-950 text-slate-600 border border-slate-850 cursor-not-allowed'
+                    }`}
+                  >
+                    Submit & Claim +50 XP 🏆
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </form>
+        </div>
+      )}
+
+      {/* Interactive Self-Reflection Check Overlay (logs >= 5 pages) */}
+      {activeBookForSelfReflection && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm text-center space-y-6 shadow-2xl">
+            
+            {/* Header */}
+            <div className="space-y-2">
+              <span className="text-4xl block animate-bounce">🧠⚡</span>
+              <h3 className="text-lg font-black text-white">Self-Reflection Check</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                You logged <span className="text-orange-400 font-bold">{pagesLoggedForSelfReflection} pages</span> read! Take 30 seconds to reflect to lock in learnings & claim your bonus.
+              </p>
+              <div className="inline-block px-3 py-1 bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-orange-500/10">
+                ✨ +20 XP reflection bonus active
+              </div>
             </div>
 
-            <div className="space-y-3 pt-2">
-              <button
-                type="submit"
-                disabled={!reflectionNoteText.trim()}
-                className={`w-full py-3.5 font-black rounded-2xl text-xs cursor-pointer text-center transition ${
-                  reflectionNoteText.trim()
-                    ? 'bg-orange-500 hover:bg-orange-400 text-white shadow-xl shadow-orange-500/10'
-                    : 'bg-slate-950 text-slate-600 border border-slate-850 cursor-not-allowed'
-                }`}
-              >
-                Save to Journal
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  setFinishedBookForReflection(null);
-                  setReflectionNoteText('');
-                }}
-                className="w-full text-slate-500 hover:text-slate-400 text-xs font-bold transition py-1 text-center cursor-pointer"
-              >
-                Skip Notes (No pressure!)
-              </button>
-            </div>
-          </form>
+            {/* Options steps view */}
+            {selfReflectionStep === 'options' && (
+              <div className="space-y-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelfReflectionStep('text')}
+                  className="w-full p-4 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-orange-500/50 transition rounded-2xl flex items-center gap-3 cursor-pointer text-left"
+                >
+                  <span className="text-2xl">✍️</span>
+                  <div>
+                    <h4 className="text-xs font-black text-white">Write Reflection</h4>
+                    <p className="text-[10px] text-slate-500 font-medium">Jot down what you learned or chapter improvements.</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelfReflectionStep('voice')}
+                  className="w-full p-4 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-orange-500/50 transition rounded-2xl flex items-center gap-3 cursor-pointer text-left"
+                >
+                  <span className="text-2xl">🎙️</span>
+                  <div>
+                    <h4 className="text-xs font-black text-white">Record Voice Note</h4>
+                    <p className="text-[10px] text-slate-500 font-medium">Explain a quick summaries of the pages verbally.</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveSelfReflection('skip')}
+                  className="w-full text-slate-500 hover:text-slate-400 text-xs font-bold transition py-2 text-center cursor-pointer animate-pulse"
+                >
+                  Skip Reflection (Forfeit +20 XP)
+                </button>
+              </div>
+            )}
+
+            {/* Text input step */}
+            {selfReflectionStep === 'text' && (
+              <div className="space-y-4 pt-2 text-left">
+                <textarea
+                  placeholder="What did you learn? Or what could be improved in the chapter?"
+                  value={selfReflectionText}
+                  onChange={(e) => setSelfReflectionText(e.target.value)}
+                  className="w-full h-28 bg-slate-950 border border-slate-850 text-slate-100 rounded-2xl p-3.5 text-xs focus:border-orange-500 outline-none resize-none leading-relaxed"
+                />
+                
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelfReflectionStep('options')}
+                    className="px-4 py-3 bg-slate-950 border border-slate-850 text-slate-400 font-bold rounded-2xl text-xs cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSelfReflection('text')}
+                    disabled={!selfReflectionText.trim()}
+                    className={`flex-1 py-3 font-black rounded-2xl text-xs cursor-pointer text-center transition ${
+                      selfReflectionText.trim()
+                        ? 'bg-orange-500 hover:bg-orange-400 text-white shadow-xl shadow-orange-500/10'
+                        : 'bg-slate-950 text-slate-600 border border-slate-850 cursor-not-allowed'
+                    }`}
+                  >
+                    Save & Claim +20 XP
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Voice record step */}
+            {selfReflectionStep === 'voice' && (
+              <div className="space-y-4 pt-2">
+                <div className="p-6 bg-slate-950 rounded-2xl border border-slate-850 flex flex-col items-center justify-center min-h-[100px]">
+                  {isRecordingVoiceSelfReflection ? (
+                    <div className="space-y-3 text-center">
+                      <div className="flex items-center gap-1 justify-center h-8">
+                        <span className="w-1.5 h-4 bg-red-500 rounded-full animate-bounce" />
+                        <span className="w-1.5 h-8 bg-red-500 rounded-full animate-bounce delay-75" />
+                        <span className="w-1.5 h-6 bg-red-500 rounded-full animate-bounce delay-150" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsRecordingVoiceSelfReflection(false);
+                          setVoiceRecordedSelfReflection(true);
+                        }}
+                        className="px-3 py-1.5 bg-red-500/20 text-red-400 text-[10px] font-black border border-red-500/30 rounded-xl"
+                      >
+                        Stop Recording
+                      </button>
+                    </div>
+                  ) : voiceRecordedSelfReflection ? (
+                    <div className="space-y-2">
+                      <span className="text-3xl block">🎙️✅</span>
+                      <p className="text-[10px] text-emerald-400 font-black uppercase tracking-wider">Voice summary ready!</p>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRecordingVoiceSelfReflection(true);
+                        setVoiceRecordedSelfReflection(false);
+                      }}
+                      className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-xl shadow-lg cursor-pointer text-white animate-pulse"
+                    >
+                      🎙️
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelfReflectionStep('options')}
+                    className="px-4 py-3 bg-slate-950 border border-slate-850 text-slate-400 font-bold rounded-2xl text-xs cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSelfReflection('voice')}
+                    disabled={!voiceRecordedSelfReflection}
+                    className={`flex-1 py-3 font-black rounded-2xl text-xs cursor-pointer text-center transition ${
+                      voiceRecordedSelfReflection
+                        ? 'bg-orange-500 hover:bg-orange-400 text-white shadow-xl shadow-orange-500/10'
+                        : 'bg-slate-950 text-slate-600 border border-slate-850 cursor-not-allowed'
+                    }`}
+                  >
+                    Save & Claim +20 XP
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
       )}
 

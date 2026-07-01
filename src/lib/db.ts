@@ -56,7 +56,9 @@ export interface BookReflection {
   id: string;
   book_id: string;
   user_id: string;
-  text: string;
+  type: 'text' | 'voice' | 'video';
+  text?: string;
+  media_url?: string;
   created_at: string;
 }
 
@@ -495,12 +497,16 @@ export const db = {
   async addBookReflection(
     userId: string,
     bookId: string,
-    text: string
+    type: 'text' | 'voice' | 'video',
+    text?: string,
+    mediaUrl?: string
   ): Promise<BookReflection> {
     const reflection: Omit<BookReflection, 'id'> = {
       book_id: bookId,
       user_id: userId,
-      text,
+      type,
+      text: text || '',
+      media_url: mediaUrl || '',
       created_at: new Date().toISOString(),
     };
 
