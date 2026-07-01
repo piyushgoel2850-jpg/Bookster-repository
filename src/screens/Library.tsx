@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGame } from '../context/GameContext';
@@ -53,6 +53,39 @@ export const Library: React.FC = () => {
   const [selfReflectionText, setSelfReflectionText] = useState('');
   const [isRecordingVoiceSelfReflection, setIsRecordingVoiceSelfReflection] = useState(false);
   const [voiceRecordedSelfReflection, setVoiceRecordedSelfReflection] = useState(false);
+
+  // Recording timer states
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [maxRecordingSeconds, setMaxRecordingSeconds] = useState(30);
+  const recordingTimerRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    };
+  }, []);
+
+  const startRecordingTimer = (maxSec: number, onComplete: () => void) => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    setRecordingSeconds(0);
+    setMaxRecordingSeconds(maxSec);
+    let elapsed = 0;
+    recordingTimerRef.current = setInterval(() => {
+      elapsed += 1;
+      setRecordingSeconds(elapsed);
+      if (elapsed >= maxSec) {
+        clearInterval(recordingTimerRef.current);
+        onComplete();
+      }
+    }, 1000);
+  };
+
+  const stopRecordingTimer = () => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+  };
 
   const handleSearchBooks = async (query: string) => {
     setSearchQuery(query);
@@ -770,40 +803,92 @@ export const Library: React.FC = () => {
 
             {/* Step 3: Video Review Recorder */}
             {finishedBookStep === 'video' && (
-              <div className="space-y-4 pt-2">
-                <div className="p-6 bg-slate-950 rounded-2xl border border-slate-850 flex flex-col items-center justify-center min-h-[140px]">
+              <div className="space-y-4 pt-2 select-none">
+                <div className="p-6 bg-slate-950 rounded-3xl border border-slate-850 flex flex-col items-center justify-center min-h-[220px] relative overflow-hidden">
                   {isVideoRecordingReview ? (
-                    <div className="space-y-3 text-center">
-                      <div className="flex items-center gap-2 justify-center">
-                        <span className="w-3.5 h-3.5 bg-red-500 rounded-full animate-ping" />
-                        <span className="text-red-500 text-xs font-black uppercase tracking-wider">● Recording Review...</span>
+                    <div className="absolute inset-0 bg-[#120f0d] border-2 border-red-500 rounded-3xl flex flex-col justify-between p-4 overflow-hidden">
+                      {/* Telemetry settings */}
+                      <div className="flex justify-between items-center z-10">
+                        <span className="text-[7px] bg-[#d35d3b]/80 border border-[#FAF6EE]/15 text-[#faf6ee] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
+                          📷 User Front • 720p HD
+                        </span>
+                        <span className="text-[7px] bg-red-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest animate-pulse">
+                          REC
+                        </span>
                       </div>
-                      <p className="text-[10px] text-slate-500">Record a summary explaining your favorite parts!</p>
+
+                      {/* SVG circular countdown progress */}
+                      <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                        <svg className="w-24 h-24 transform -rotate-90 absolute">
+                          <circle
+                            cx="48"
+                            cy="48"
+                            r="34"
+                            className="stroke-[#FAF6EE]/10"
+                            strokeWidth="5"
+                            fill="transparent"
+                          />
+                          <circle
+                            cx="48"
+                            cy="48"
+                            r="34"
+                            className={`transition-all duration-100 ${
+                              maxRecordingSeconds - recordingSeconds <= 5 ? 'stroke-red-500' : 'stroke-[#d35d3b]'
+                            }`}
+                            strokeWidth="5"
+                            fill="transparent"
+                            strokeDasharray={2 * Math.PI * 34}
+                            strokeDashoffset={
+                              (2 * Math.PI * 34) - (recordingSeconds / maxRecordingSeconds) * (2 * Math.PI * 34)
+                            }
+                          />
+                        </svg>
+                        <div className="flex flex-col items-center z-10">
+                          <span className="text-white font-extrabold text-sm font-serif">
+                            {Math.max(0, maxRecordingSeconds - recordingSeconds)}s
+                          </span>
+                          <span className="text-[7px] text-[#FAF6EE]/40 font-black uppercase tracking-widest leading-none">
+                            left
+                          </span>
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => {
+                          stopRecordingTimer();
                           setIsVideoRecordingReview(false);
                           setVideoRecordedReview(true);
                         }}
-                        className="px-4 py-2 bg-red-500/20 text-red-400 text-[10px] font-black border border-red-500/30 rounded-xl"
+                        className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition cursor-pointer z-10"
                       >
-                        Stop & Capture Review
+                        Stop Recording
                       </button>
                     </div>
                   ) : videoRecordedReview ? (
-                    <div className="space-y-3 text-center">
-                      <span className="text-4xl block">🎥✅</span>
-                      <p className="text-[10px] text-emerald-400 font-black uppercase tracking-wider">Video Review Captured!</p>
-                      <p className="text-[9px] text-slate-500">Captured: 15s review clip</p>
+                    <div className="space-y-4 text-center">
+                      <span className="text-4xl block animate-bounce">🎥✅</span>
+                      <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">
+                        Video Review Captured!
+                      </p>
+                      <p className="text-[9px] text-[#FAF6EE]/40 font-semibold">
+                        Optimized: 720p front-facing clip saved.
+                      </p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      <p className="text-[10px] text-slate-400 font-medium">Record a 15-30s video sharing your summary & final rating.</p>
+                    <div className="space-y-4 text-center">
+                      <p className="text-[10px] text-[#FAF6EE]/50 font-semibold px-4">
+                        Record a 30s video sharing your summary & final rating.
+                      </p>
                       <button
                         type="button"
                         onClick={() => {
-                          setIsVideoRecordingReview(true);
                           setVideoRecordedReview(false);
+                          setIsVideoRecordingReview(true);
+                          startRecordingTimer(30, () => {
+                            setIsVideoRecordingReview(false);
+                            setVideoRecordedReview(true);
+                          });
                         }}
                         className="w-14 h-14 rounded-full bg-orange-500 hover:bg-orange-400 flex items-center justify-center text-xl shadow-lg cursor-pointer text-white mx-auto animate-pulse"
                       >
@@ -930,37 +1015,78 @@ export const Library: React.FC = () => {
 
             {/* Voice record step */}
             {selfReflectionStep === 'voice' && (
-              <div className="space-y-4 pt-2">
-                <div className="p-6 bg-slate-950 rounded-2xl border border-slate-850 flex flex-col items-center justify-center min-h-[100px]">
+              <div className="space-y-4 pt-2 select-none">
+                <div className="p-6 bg-slate-950 rounded-3xl border border-slate-850 flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden">
                   {isRecordingVoiceSelfReflection ? (
-                    <div className="space-y-3 text-center">
-                      <div className="flex items-center gap-1 justify-center h-8">
-                        <span className="w-1.5 h-4 bg-red-500 rounded-full animate-bounce" />
-                        <span className="w-1.5 h-8 bg-red-500 rounded-full animate-bounce delay-75" />
-                        <span className="w-1.5 h-6 bg-red-500 rounded-full animate-bounce delay-150" />
+                    <div className="absolute inset-0 bg-[#120f0d] border border-[#FAF6EE]/10 rounded-3xl flex flex-col justify-between p-4 overflow-hidden">
+                      <div className="flex items-center gap-1 justify-center z-10">
+                        <span className="w-1.5 h-3 bg-red-500 rounded-full animate-bounce" />
+                        <span className="w-1.5 h-6 bg-red-500 rounded-full animate-bounce delay-75" />
+                        <span className="w-1.5 h-4 bg-red-500 rounded-full animate-bounce delay-150" />
+                        <span className="text-red-500 text-[9px] font-black uppercase tracking-widest ml-1">Recording...</span>
                       </div>
+
+                      {/* SVG circular countdown progress */}
+                      <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+                        <svg className="w-20 h-20 transform -rotate-90 absolute">
+                          <circle
+                            cx="40"
+                            cy="40"
+                            r="30"
+                            className="stroke-[#FAF6EE]/10"
+                            strokeWidth="4"
+                            fill="transparent"
+                          />
+                          <circle
+                            cx="40"
+                            cy="40"
+                            r="30"
+                            className={`transition-all duration-100 ${
+                              maxRecordingSeconds - recordingSeconds <= 10 ? 'stroke-red-500' : 'stroke-[#d35d3b]'
+                            }`}
+                            strokeWidth="4"
+                            fill="transparent"
+                            strokeDasharray={2 * Math.PI * 30}
+                            strokeDashoffset={
+                              (2 * Math.PI * 30) - (recordingSeconds / maxRecordingSeconds) * (2 * Math.PI * 30)
+                            }
+                          />
+                        </svg>
+                        <span className="text-white font-extrabold text-xs font-serif z-10">
+                          {Math.floor((maxRecordingSeconds - recordingSeconds) / 60)}:
+                          {String((maxRecordingSeconds - recordingSeconds) % 60).padStart(2, '0')}
+                        </span>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => {
+                          stopRecordingTimer();
                           setIsRecordingVoiceSelfReflection(false);
                           setVoiceRecordedSelfReflection(true);
                         }}
-                        className="px-3 py-1.5 bg-red-500/20 text-red-400 text-[10px] font-black border border-red-500/30 rounded-xl"
+                        className="w-full py-2 bg-red-600 hover:bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition cursor-pointer z-10"
                       >
                         Stop Recording
                       </button>
                     </div>
                   ) : voiceRecordedSelfReflection ? (
-                    <div className="space-y-2">
-                      <span className="text-3xl block">🎙️✅</span>
-                      <p className="text-[10px] text-emerald-400 font-black uppercase tracking-wider">Voice summary ready!</p>
+                    <div className="space-y-3 text-center">
+                      <span className="text-3xl block animate-bounce">🎙️✅</span>
+                      <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">
+                        Voice summary ready!
+                      </p>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => {
-                        setIsRecordingVoiceSelfReflection(true);
                         setVoiceRecordedSelfReflection(false);
+                        setIsRecordingVoiceSelfReflection(true);
+                        startRecordingTimer(90, () => {
+                          setIsRecordingVoiceSelfReflection(false);
+                          setVoiceRecordedSelfReflection(true);
+                        });
                       }}
                       className="w-14 h-14 rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-xl shadow-lg cursor-pointer text-white animate-pulse"
                     >

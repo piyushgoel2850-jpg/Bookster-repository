@@ -51,6 +51,37 @@ export const Reader: React.FC = () => {
   const [voiceRecording, setVoiceRecording] = useState(false);
   const [voiceRecorded, setVoiceRecorded] = useState(false);
 
+  // Recording timer states
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recordingTimerRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    };
+  }, []);
+
+  const startRecordingTimer = (maxSec: number, onComplete: () => void) => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    setRecordingSeconds(0);
+    let elapsed = 0;
+    recordingTimerRef.current = setInterval(() => {
+      elapsed += 1;
+      setRecordingSeconds(elapsed);
+      if (elapsed >= maxSec) {
+        clearInterval(recordingTimerRef.current);
+        onComplete();
+      }
+    }, 1000);
+  };
+
+  const stopRecordingTimer = () => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+  };
+
   // Recap Quiz States
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
@@ -543,41 +574,80 @@ export const Reader: React.FC = () => {
 
                 {/* Reflection Screen 3: Voice Note Stub */}
                 {reflectionStep === 'voice' && (
-                  <div className="space-y-6">
+                  <div className="space-y-6 select-none">
                     <div className="text-center">
-                      <h3 className="text-xl font-black text-white">Record a voice reflection</h3>
+                      <h3 className="text-xl font-black text-white font-serif">Record a voice reflection</h3>
                       <p className="text-orange-400 font-bold text-xs mt-1">✨ +15 XP reflection bonus will be added</p>
                     </div>
 
-                    <div className="py-8 flex flex-col items-center justify-center">
+                    <div className="py-6 flex flex-col items-center justify-center min-h-[160px] relative overflow-hidden">
                       {voiceRecording ? (
-                        <div className="space-y-4 text-center">
-                          {/* Animated wave */}
-                          <div className="flex items-center gap-1 justify-center h-10">
-                            <span className="w-1.5 h-6 bg-red-500 rounded-full animate-bounce delay-75" />
-                            <span className="w-1.5 h-10 bg-red-500 rounded-full animate-bounce" />
-                            <span className="w-1.5 h-8 bg-red-500 rounded-full animate-bounce delay-150" />
-                            <span className="w-1.5 h-4 bg-red-500 rounded-full animate-bounce" />
+                        <div className="space-y-4 text-center z-10">
+                          {/* SVG circular countdown progress */}
+                          <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                            <svg className="w-24 h-24 transform -rotate-90 absolute">
+                              <circle
+                                cx="48"
+                                cy="48"
+                                r="34"
+                                className="stroke-slate-800"
+                                strokeWidth="5"
+                                fill="transparent"
+                              />
+                              <circle
+                                cx="48"
+                                cy="48"
+                                r="34"
+                                className={`transition-all duration-100 ${
+                                  90 - recordingSeconds <= 10 ? 'stroke-red-500' : 'stroke-orange-500'
+                                }`}
+                                strokeWidth="5"
+                                fill="transparent"
+                                strokeDasharray={2 * Math.PI * 34}
+                                strokeDashoffset={
+                                  (2 * Math.PI * 34) - (recordingSeconds / 90) * (2 * Math.PI * 34)
+                                }
+                              />
+                            </svg>
+                            <span className="text-white font-extrabold text-sm font-serif z-10">
+                              {Math.floor((90 - recordingSeconds) / 60)}:
+                              {String((90 - recordingSeconds) % 60).padStart(2, '0')}
+                            </span>
                           </div>
+
+                          <div className="flex items-center gap-1 justify-center h-8">
+                            <span className="w-1.5 h-3 bg-red-500 rounded-full animate-bounce" />
+                            <span className="w-1.5 h-6 bg-red-500 rounded-full animate-bounce delay-75" />
+                            <span className="w-1.5 h-4 bg-red-500 rounded-full animate-bounce delay-150" />
+                          </div>
+
                           <button
                             onClick={() => {
+                              stopRecordingTimer();
                               setVoiceRecording(false);
                               setVoiceRecorded(true);
                             }}
-                            className="px-4 py-2 bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30 rounded-xl"
+                            className="px-4 py-2 bg-red-650/80 hover:bg-red-600 text-white text-xs font-bold rounded-xl cursor-pointer"
                           >
                             Stop Recording
                           </button>
                         </div>
                       ) : voiceRecorded ? (
-                        <div className="space-y-2">
-                          <span className="text-4xl">🎙️✅</span>
-                          <p className="text-xs text-slate-500 font-bold">12s recorded</p>
+                        <div className="space-y-3 text-center">
+                          <span className="text-4xl block animate-bounce">🎙️✅</span>
+                          <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider">Voice summary ready!</p>
                         </div>
                       ) : (
                         <button
-                          onClick={() => setVoiceRecording(true)}
-                          className="w-20 h-20 rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-3xl shadow-xl shadow-red-500/20 cursor-pointer text-white"
+                          onClick={() => {
+                            setVoiceRecorded(false);
+                            setVoiceRecording(true);
+                            startRecordingTimer(90, () => {
+                              setVoiceRecording(false);
+                              setVoiceRecorded(true);
+                            });
+                          }}
+                          className="w-20 h-20 rounded-full bg-red-500 hover:bg-red-400 flex items-center justify-center text-3xl shadow-xl shadow-red-500/20 cursor-pointer text-white animate-pulse"
                         >
                           🎙️
                         </button>
@@ -586,7 +656,11 @@ export const Reader: React.FC = () => {
 
                     <div className="flex gap-4">
                       <button
-                        onClick={() => setReflectionStep('text')}
+                        onClick={() => {
+                          stopRecordingTimer();
+                          setVoiceRecording(false);
+                          setReflectionStep('text');
+                        }}
                         className="px-4 py-3.5 bg-slate-950 border border-slate-800 text-slate-400 font-bold rounded-2xl cursor-pointer"
                       >
                         Keyboard
@@ -600,7 +674,11 @@ export const Reader: React.FC = () => {
                       </button>
                     </div>
                     <button
-                      onClick={() => handleSaveReflection('skip')}
+                      onClick={() => {
+                        stopRecordingTimer();
+                        setVoiceRecording(false);
+                        handleSaveReflection('skip');
+                      }}
                       className="w-full text-center text-xs text-slate-600 font-bold py-1 hover:text-slate-500 cursor-pointer"
                     >
                       Cancel and forfeit bonus XP
