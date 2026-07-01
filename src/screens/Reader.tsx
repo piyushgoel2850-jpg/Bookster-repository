@@ -245,25 +245,25 @@ export const Reader: React.FC = () => {
   }
 
   const themeClasses = {
-    dark: 'bg-slate-950 text-slate-100',
-    light: 'bg-slate-50 text-slate-900',
-    sepia: 'bg-orange-50 text-amber-950',
+    dark: 'bg-[#120f0d] text-[#FAF6EE]/80',
+    light: 'bg-[#FAF6EE] text-[#2C2724]',
+    sepia: 'bg-[#faf5ea] text-[#3c2f2f]',
   };
 
   return (
-    <div className={`min-h-screen ${themeClasses[theme]} transition-colors duration-300 pb-36 relative`}>
+    <div className={`min-h-screen ${themeClasses[theme]} transition-colors duration-300 pb-36 relative select-none`}>
       {/* Top Header Options */}
       <header className="px-6 py-4 flex items-center justify-between sticky top-0 z-30 bg-inherit border-b border-current/10">
         <button
           onClick={() => navigate('/')}
-          className="p-2 rounded-full hover:bg-current/10 transition cursor-pointer"
+          className="p-2 rounded-full hover:bg-current/10 transition cursor-pointer text-xs font-black"
         >
-          ✕
+          ✕ CLOSE
         </button>
 
         {/* Live Timer Counter */}
-        <div className="flex items-center gap-2 px-3 py-1 bg-current/5 border border-current/10 rounded-full font-mono text-sm font-bold">
-          <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+        <div className="flex items-center gap-2 px-3 py-1 bg-current/5 border border-current/10 rounded-full font-mono text-sm font-black">
+          <span className="w-2 h-2 rounded-full bg-[#d35d3b] animate-pulse" />
           <span>{formatTime(seconds)}</span>
         </div>
 
@@ -281,12 +281,12 @@ export const Reader: React.FC = () => {
 
       {/* Floating Display Settings Panel */}
       {showSettingsDrawer && (
-        <div className="absolute top-16 left-6 right-6 bg-slate-900 border border-slate-800 text-white p-5 rounded-3xl shadow-2xl z-40 space-y-4 select-none animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reader Settings</span>
+        <div className="absolute top-16 left-6 right-6 bg-[#faf6ee] text-[#2c2724] border-2 border-[#d35d3b] p-5 rounded-3xl shadow-2xl z-40 space-y-4 select-none animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex justify-between items-center pb-2 border-b border-[#2c2724]/10">
+            <span className="text-[9px] font-black uppercase tracking-widest text-[#d35d3b]">Reader Settings</span>
             <button
               onClick={() => setShowSettingsDrawer(false)}
-              className="text-slate-500 hover:text-slate-300 text-xs font-bold"
+              className="text-[#2c2724]/60 hover:text-[#d35d3b] text-xs font-black"
             >
               ✕
             </button>
@@ -294,39 +294,39 @@ export const Reader: React.FC = () => {
 
           {/* Theme Selector (Day / Night / Sepia) */}
           <div className="space-y-2">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Reading Theme</span>
+            <span className="text-[9px] font-black text-[#2c2724]/60 uppercase tracking-widest block">Reading Theme</span>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setTheme('light')}
-                className={`py-2.5 px-1 rounded-2xl text-[10px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
+                className={`py-2.5 px-1 rounded-2xl text-[9px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
                   theme === 'light'
-                    ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/10'
-                    : 'bg-slate-950 text-slate-400 border-slate-850 hover:bg-slate-900/60'
+                    ? 'bg-[#d35d3b] text-white border-[#d35d3b] shadow-md shadow-[#d35d3b]/10'
+                    : 'bg-[#FAF6EE] text-[#2c2724]/60 border-[#2c2724]/10 hover:bg-[#2c2724]/5'
                 }`}
               >
                 <span className="text-base">☀️</span>
-                <span>Day Mode</span>
+                <span>Light</span>
               </button>
               <button
                 type="button"
                 onClick={() => setTheme('dark')}
-                className={`py-2.5 px-1 rounded-2xl text-[10px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
+                className={`py-2.5 px-1 rounded-2xl text-[9px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
                   theme === 'dark'
-                    ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/10'
-                    : 'bg-slate-950 text-slate-400 border-slate-850 hover:bg-slate-900/60'
+                    ? 'bg-[#d35d3b] text-white border-[#d35d3b] shadow-md shadow-[#d35d3b]/10'
+                    : 'bg-[#FAF6EE] text-[#2c2724]/60 border-[#2c2724]/10 hover:bg-[#2c2724]/5'
                 }`}
               >
                 <span className="text-base">🌙</span>
-                <span>Night Mode</span>
+                <span>Dark</span>
               </button>
               <button
                 type="button"
                 onClick={() => setTheme('sepia')}
-                className={`py-2.5 px-1 rounded-2xl text-[10px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
+                className={`py-2.5 px-1 rounded-2xl text-[9px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
                   theme === 'sepia'
-                    ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/10'
-                    : 'bg-slate-950 text-slate-400 border-slate-850 hover:bg-slate-900/60'
+                    ? 'bg-[#d35d3b] text-white border-[#d35d3b] shadow-md shadow-[#d35d3b]/10'
+                    : 'bg-[#FAF6EE] text-[#2c2724]/60 border-[#2c2724]/10 hover:bg-[#2c2724]/5'
                 }`}
               >
                 <span className="text-base">🍂</span>
@@ -338,22 +338,22 @@ export const Reader: React.FC = () => {
           {/* Font Sizing Controls */}
           <div className="space-y-2">
             <div className="flex justify-between items-baseline">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Font Size</span>
-              <span className="text-xs font-bold text-orange-400">{fontSize}px</span>
+              <span className="text-[9px] font-black text-[#2c2724]/60 uppercase tracking-widest">Font Size</span>
+              <span className="text-xs font-black text-[#d35d3b]">{fontSize}px</span>
             </div>
-            <div className="flex items-center gap-3 bg-slate-950 border border-slate-850 rounded-2xl p-1">
+            <div className="flex items-center gap-3 bg-[#2c2724]/5 border border-[#2c2724]/10 rounded-2xl p-1">
               <button
                 type="button"
                 onClick={() => setFontSize((s) => Math.max(14, s - 2))}
-                className="flex-1 py-2 font-black text-xs hover:text-orange-500 cursor-pointer"
+                className="flex-1 py-2 font-black text-xs hover:text-[#d35d3b] cursor-pointer"
               >
                 A-
               </button>
-              <div className="w-px h-6 bg-slate-800" />
+              <div className="w-px h-6 bg-[#2c2724]/10" />
               <button
                 type="button"
                 onClick={() => setFontSize((s) => Math.min(28, s + 2))}
-                className="flex-1 py-2 font-black text-xs hover:text-orange-500 cursor-pointer"
+                className="flex-1 py-2 font-black text-xs hover:text-[#d35d3b] cursor-pointer"
               >
                 A+
               </button>
@@ -365,13 +365,13 @@ export const Reader: React.FC = () => {
       {/* Reader Body Text Container */}
       <main className="max-w-2xl mx-auto px-6 py-10">
         <div className="text-center mb-8 border-b border-current/10 pb-6">
-          <h1 className="text-3xl font-black mb-2">{story ? story.title : book?.title}</h1>
-          <p className="text-current/60 text-sm">by {story ? story.author : book?.author}</p>
+          <h1 className="text-2xl font-black font-serif mb-2">{story ? story.title : book?.title}</h1>
+          <p className="text-current/60 text-xs italic">by {story ? story.author : book?.author}</p>
         </div>
 
         {/* Scaled Text Area */}
         <article
-          className="leading-relaxed whitespace-pre-wrap select-text font-serif focus:outline-none"
+          className="leading-relaxed whitespace-pre-wrap select-text font-serif focus:outline-none tracking-wide text-justify"
           style={{ fontSize: `${fontSize}px` }}
         >
           {story
@@ -384,7 +384,7 @@ export const Reader: React.FC = () => {
       <footer className="fixed bottom-0 left-0 right-0 py-6 px-6 bg-inherit border-t border-current/10 max-w-md mx-auto z-20">
         <button
           onClick={handleFinishSession}
-          className="w-full py-4 bg-orange-500 hover:bg-orange-400 active:bg-orange-600 transition font-black rounded-2xl text-white shadow-xl text-center cursor-pointer"
+          className="w-full py-4 bg-[#d35d3b] hover:bg-[#d35d3b]/90 active:scale-[0.98] transition font-black rounded-2xl text-white shadow-xl text-center cursor-pointer text-xs uppercase tracking-wider"
         >
           Finish Reading Session
         </button>

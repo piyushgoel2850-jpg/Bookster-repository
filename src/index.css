@@ -1,4 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Quicksand:wght@300..700&display=swap');
 @import "tailwindcss";
+
+/* Set Global Cozy Font Family */
+body {
+  font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #0b0908;
+}
+
+.font-serif {
+  font-family: 'Playfair Display', Georgia, serif !important;
+}
 
 /* Custom Scrollbar Utilities */
 .scrollbar-none::-webkit-scrollbar {
@@ -28,8 +39,8 @@ a:active,
 }
 
 .interactive-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.05);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -4px rgba(211, 93, 59, 0.08);
 }
 
 /* Glow gradient borders */
@@ -41,7 +52,7 @@ a:active,
   content: "";
   position: absolute;
   inset: -1px;
-  background: linear-gradient(to right, var(--color-orange-500), var(--color-rose-500));
+  background: linear-gradient(to right, #d35d3b, #f09f80);
   border-radius: inherit;
   z-index: -1;
   opacity: 0;
@@ -49,5 +60,35 @@ a:active,
 }
 
 .glow-card:hover::after {
-  opacity: 0.15;
+  opacity: 0.2;
+}
+
+/* Cozy Ghibli Anime Spinning Record Animation */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Ember particles layout */
+.ember-glow {
+  box-shadow: 0 0 20px 2px rgba(211, 93, 59, 0.15);
+}
+
+/* Warm Parchment Styling overrides */
+.parchment-bg {
+  background-color: #faf6ee;
+  color: #2c2724;
+}
+
+.parchment-dark {
+  background-color: #1e1a18;
+  color: #faf6ee;
 }

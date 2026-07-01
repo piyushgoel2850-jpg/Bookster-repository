@@ -65,37 +65,37 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-28 px-6 pt-6 max-w-md mx-auto relative overflow-hidden select-none">
-      {/* Background Glowing Circles */}
-      <div className="absolute top-10 left-[-40px] w-56 h-56 bg-purple-600/10 rounded-full blur-[80px] pointer-events-none" />
-      <div className="absolute top-1/2 right-[-40px] w-56 h-56 bg-orange-600/10 rounded-full blur-[80px] pointer-events-none" />
+    <div className="min-h-screen bg-[#120f0d] text-[#faf6ee] pb-28 px-6 pt-6 max-w-md mx-auto relative overflow-hidden select-none">
+      {/* Background Soft Sunset Candle Glows */}
+      <div className="absolute top-10 left-[-40px] w-56 h-56 bg-[#d35d3b]/10 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-1/2 right-[-40px] w-56 h-56 bg-[#f9d382]/10 rounded-full blur-[80px] pointer-events-none" />
 
       {/* Top Banner Header */}
-      <header className="flex items-center justify-between mb-8 relative z-10">
+      <header className="flex items-center justify-between mb-8 relative z-10 border-b border-[#FAF6EE]/10 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-xl shadow-md select-none transform hover:rotate-12 transition">
-            📖
+          <div className="w-10 h-10 rounded-xl bg-[#faf6ee] border border-[#d35d3b] flex items-center justify-center text-xl shadow-md transform hover:rotate-12 transition">
+            ☕
           </div>
           <div>
             <div className="flex items-baseline gap-1.5">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Level {level}</h2>
-              <span className="text-[9px] text-purple-400 font-extrabold uppercase">({xp % 100}/100 XP)</span>
+              <h2 className="text-[10px] font-black text-[#f09f80] uppercase tracking-widest">Cozy Reader</h2>
+              <span className="text-[9px] text-[#f9d382] font-black">Level {level}</span>
             </div>
-            <div className="w-16 bg-slate-950 h-1 rounded-full overflow-hidden mt-1 border border-slate-900">
-              <div className="bg-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${xp % 100}%` }} />
-            </div>
+            <h1 className="font-extrabold font-serif text-white text-base leading-none tracking-tight">
+              {profile?.display_name || 'Bookster'}
+            </h1>
           </div>
         </div>
 
         {/* Stats Indicator */}
         <div className="flex items-center gap-2">
           {/* XP Badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl text-xs font-black shadow-md hover:scale-105 transition cursor-pointer">
+          <div className="flex items-center gap-1 px-2.5 py-1.5 bg-[#FAF6EE]/5 border border-[#FAF6EE]/15 text-[#faf6ee] rounded-xl text-[10px] font-extrabold tracking-wide shadow-sm hover:border-[#d35d3b] transition cursor-pointer">
             ⚡ <span>{xp} XP</span>
           </div>
 
           {/* Streak Flame Badge */}
-          <div className="flex items-center gap-1 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-500 rounded-xl text-xs font-black shadow-md hover:scale-105 active:scale-95 transition cursor-pointer animate-pulse">
+          <div className="flex items-center gap-1 px-2.5 py-1.5 bg-[#d35d3b]/10 border border-[#d35d3b]/30 text-[#d35d3b] rounded-xl text-[10px] font-extrabold tracking-wide shadow-sm animate-pulse hover:scale-105 transition cursor-pointer">
             🔥 <span>{streak?.current_streak || 0}</span>
           </div>
         </div>
@@ -103,67 +103,87 @@ export const Home: React.FC = () => {
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center py-20 text-slate-500 font-bold">
-          Loading library dashboard...
+          ✍️ Opening your study journal...
         </div>
       ) : (
         <div className="space-y-8 relative z-10">
-          {/* Daily Goal Card */}
-          <section className="bg-slate-900/60 border border-slate-900 rounded-2xl p-5 shadow-lg relative overflow-hidden interactive-card glow-card group cursor-pointer">
+          
+          {/* Daily Goal Card: Study Desk layout */}
+          <section className="bg-[#faf6ee] text-[#2c2724] border border-[#FAF6EE]/20 rounded-3xl p-5 shadow-2xl relative overflow-hidden interactive-card glow-card group cursor-pointer">
+            {/* Top decorative header border */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#d35d3b]" />
+            
             <div className="flex justify-between items-start mb-3">
               <div>
-                <h2 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-1">Daily Habit</h2>
-                <h3 className="text-lg font-extrabold text-white group-hover:text-orange-400 transition">Daily Reading Target</h3>
+                <h2 className="text-[9px] font-black text-[#d35d3b] uppercase tracking-widest mb-1">Study Desk Beats</h2>
+                <h3 className="text-base font-black font-serif tracking-tight">Reading Timer Target</h3>
               </div>
-              <span className="text-2xl transform group-hover:scale-110 group-hover:rotate-12 transition">⏳</span>
+              
+              {/* Spinning Record disc lofi simulator */}
+              <div 
+                className="w-10 h-10 rounded-full bg-[#2c2724] border-2 border-[#faf6ee] flex items-center justify-center text-sm shadow-md animate-spin-slow relative shrink-0 select-none"
+                title="🎧 Playing cozy lo-fi vibes..."
+              >
+                💿
+                <span className="absolute -top-1.5 -right-1.5 text-[8px] animate-bounce">🎶</span>
+              </div>
             </div>
 
-            {/* Progress ring/bar */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-baseline text-sm">
-                <span className="font-bold text-slate-300">
-                  {dailyActiveMinutes} <span className="text-xs text-slate-500">/ {dailyGoalMinutes} mins</span>
+            {/* Progress bar */}
+            <div className="space-y-2 pt-1">
+              <div className="flex justify-between items-baseline text-xs">
+                <span className="font-bold text-[#2c2724]/80">
+                  Logged: <span className="text-[#d35d3b] font-black">{dailyActiveMinutes}</span> / {dailyGoalMinutes} mins
                 </span>
-                <span className="font-bold text-orange-400 text-xs">{goalProgressPercent}%</span>
+                <span className="font-black text-[#d35d3b]">{goalProgressPercent}%</span>
               </div>
-              <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800/40">
+              <div className="w-full bg-[#2c2724]/10 h-2.5 rounded-full overflow-hidden border border-[#2c2724]/5">
                 <div
-                  className="bg-gradient-to-r from-orange-500 to-rose-500 h-full rounded-full transition-all duration-500"
+                  className="bg-[#d35d3b] h-full rounded-full transition-all duration-700"
                   style={{ width: `${goalProgressPercent}%` }}
                 />
               </div>
             </div>
+            
             {goalProgressPercent >= 100 && (
-              <div className="mt-3 text-xs text-emerald-400 font-bold flex items-center gap-1 animate-bounce">
-                🎉 Daily goal completed! +50 XP Active
+              <div className="mt-3 text-[10px] text-emerald-600 font-extrabold flex items-center gap-1 animate-bounce">
+                ✨ Goal Met! Lofi record vinyl complete! +50 XP
               </div>
             )}
           </section>
 
-          {/* Core loop Resume Card */}
-          <section className="bg-slate-900/40 border border-slate-900 rounded-3xl p-6 shadow-2xl relative overflow-hidden interactive-card glow-card group cursor-pointer">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
-            <h2 className="text-xs font-black text-rose-500 uppercase tracking-widest mb-4">Continue Reading</h2>
+          {/* Core loop Resume Card: Vintage Library Card style */}
+          <section className="bg-[#1e1a18]/80 border border-[#FAF6EE]/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden interactive-card glow-card group cursor-pointer">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[#d35d3b]/5 rounded-full blur-xl pointer-events-none" />
+            
+            {/* Library stamp card indicator */}
+            <div className="flex justify-between items-center mb-4 border-b border-[#FAF6EE]/10 pb-2">
+              <h2 className="text-[9px] font-black text-[#f09f80] uppercase tracking-widest">Library Ticket</h2>
+              <span className="text-[8px] font-extrabold px-2 py-0.5 rounded-full bg-[#FAF6EE]/5 text-[#FAF6EE]/60 border border-[#FAF6EE]/10 uppercase">
+                Active
+              </span>
+            </div>
 
             {activeBook || activeStory ? (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-black text-white truncate group-hover:text-orange-400 transition">
+                  <h3 className="text-xl font-black font-serif text-white truncate group-hover:text-[#f09f80] transition leading-snug">
                     {activeBook ? activeBook.title : activeStory?.title}
                   </h3>
-                  <p className="text-slate-400 text-sm truncate">
+                  <p className="text-[#f09f80]/80 text-xs italic mt-0.5">
                     by {activeBook ? activeBook.author : activeStory?.author}
                   </p>
                 </div>
 
                 {activeBook && (
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs text-slate-500">
-                      <span>Book Progress</span>
-                      <span className="text-white font-bold">{activeBook.progress_percent}%</span>
+                  <div className="space-y-1.5 bg-[#FAF6EE]/5 rounded-2xl p-3 border border-[#FAF6EE]/5">
+                    <div className="flex justify-between text-[10px] text-[#FAF6EE]/60">
+                      <span>Reading Progress</span>
+                      <span className="text-white font-extrabold">{activeBook.progress_percent}%</span>
                     </div>
-                    <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-[#1e1a18] h-1.5 rounded-full overflow-hidden border border-[#FAF6EE]/10">
                       <div
-                        className="bg-purple-500 h-full rounded-full"
+                        className="bg-[#d35d3b] h-full rounded-full transition-all duration-300"
                         style={{ width: `${activeBook.progress_percent}%` }}
                       />
                     </div>
@@ -172,31 +192,31 @@ export const Home: React.FC = () => {
 
                 <button
                   onClick={handleResumeStory}
-                  className="w-full py-3.5 mt-2 bg-gradient-to-tr from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 active:from-orange-600 active:to-rose-600 transition font-black rounded-2xl text-white shadow-xl shadow-orange-500/10 cursor-pointer text-center"
+                  className="w-full py-3.5 mt-2 bg-[#d35d3b] hover:bg-[#d35d3b]/90 active:scale-[0.98] transition font-black rounded-2xl text-white shadow-xl shadow-[#d35d3b]/10 cursor-pointer text-center text-xs uppercase tracking-wider"
                 >
-                  Resume Session
+                  📖 Pull off the shelf
                 </button>
               </div>
             ) : (
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                      Today's Pick
+                    <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full bg-[#d35d3b]/10 text-[#d35d3b] border border-[#d35d3b]/20 uppercase tracking-widest">
+                      Sunlit Pick
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">
-                      {todaysPick?.estimated_minutes} min read
+                    <span className="text-[10px] text-[#FAF6EE]/60">
+                      ⏱️ {todaysPick?.estimated_minutes} min read
                     </span>
                   </div>
-                  <h3 className="text-xl font-black text-white truncate group-hover:text-orange-400 transition">{todaysPick?.title}</h3>
-                  <p className="text-slate-400 text-sm truncate">by {todaysPick?.author}</p>
+                  <h3 className="text-xl font-black font-serif text-white truncate group-hover:text-[#f09f80] transition leading-snug">{todaysPick?.title}</h3>
+                  <p className="text-[#f09f80]/80 text-xs italic mt-0.5">by {todaysPick?.author}</p>
                 </div>
 
                 <button
                   onClick={handleResumeStory}
-                  className="w-full py-3.5 bg-gradient-to-tr from-orange-500 to-rose-500 hover:from-orange-400 hover:to-rose-400 transition font-black rounded-2xl text-white shadow-xl shadow-orange-500/10 cursor-pointer text-center"
+                  className="w-full py-3.5 bg-[#d35d3b] hover:bg-[#d35d3b]/90 active:scale-[0.98] transition font-black rounded-2xl text-white shadow-xl shadow-[#d35d3b]/10 cursor-pointer text-center text-xs uppercase tracking-wider"
                 >
-                  Start Reading
+                  📖 Begin Reading
                 </button>
               </div>
             )}

@@ -278,54 +278,57 @@ export const Library: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-28 px-6 pt-6 max-w-md mx-auto relative select-none">
-      
+    <div className="min-h-screen bg-[#120f0d] text-[#faf6ee] pb-28 px-6 pt-6 max-w-md mx-auto relative overflow-hidden select-none">
+      {/* Soft Room Candle Glows */}
+      <div className="absolute top-10 left-[-40px] w-56 h-56 bg-[#d35d3b]/10 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-1/2 right-[-40px] w-56 h-56 bg-[#f9d382]/10 rounded-full blur-[80px] pointer-events-none" />
+
       {/* Mini Stats Banner */}
-      <header className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-black text-white">Library</h1>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl text-xs font-black">
+      <header className="flex items-center justify-between mb-6 relative z-10 border-b border-[#FAF6EE]/10 pb-4">
+        <h1 className="text-xl font-extrabold font-serif text-white tracking-tight">The Bookshop</h1>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 px-2.5 py-1 bg-[#FAF6EE]/5 border border-[#FAF6EE]/15 text-[#faf6ee] rounded-xl text-[10px] font-extrabold shadow-sm">
             ⚡ {xp} XP
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/10 border border-orange-500/20 text-orange-500 rounded-xl text-xs font-black">
+          <div className="flex items-center gap-1 px-2.5 py-1 bg-[#d35d3b]/10 border border-[#d35d3b]/30 text-[#d35d3b] rounded-xl text-[10px] font-extrabold shadow-sm">
             🔥 {streak?.current_streak || 0}
           </div>
         </div>
       </header>
 
-      {/* Tabs Selector */}
-      <div className="flex bg-slate-900/60 p-1 border border-slate-900 rounded-2xl mb-8">
+      {/* Tabs Selector: Cozy Bookmark Folder design */}
+      <div className="flex bg-[#1e1a18] p-1 border border-[#FAF6EE]/10 rounded-2xl mb-8 relative z-10">
         <button
           onClick={() => setActiveTab('paths')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition duration-300 cursor-pointer ${
+          className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider rounded-xl transition duration-300 cursor-pointer ${
             activeTab === 'paths'
-              ? 'bg-orange-500 text-white shadow-md'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#d35d3b] text-white shadow-md'
+              : 'text-[#FAF6EE]/60 hover:text-white'
           }`}
         >
-          Reading Paths
+          📖 Story Shelf
         </button>
         <button
           onClick={() => setActiveTab('my-books')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition duration-300 cursor-pointer ${
+          className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider rounded-xl transition duration-300 cursor-pointer ${
             activeTab === 'my-books'
-              ? 'bg-orange-500 text-white shadow-md'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#d35d3b] text-white shadow-md'
+              : 'text-[#FAF6EE]/60 hover:text-white'
           }`}
         >
-          My Books ({myBooks.length})
+          📚 My Bookshelf ({myBooks.length})
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-slate-500 font-bold">
-          Loading catalog...
+        <div className="flex items-center justify-center py-20 text-[#FAF6EE]/60 font-bold">
+          ✍️ Inspecting bookshelves...
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 relative z-10">
           {/* TAB 1: CURATED PATHS */}
           {activeTab === 'paths' && (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Category selector chips */}
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
                 {ALL_CATEGORIES.map((cat) => (
@@ -333,10 +336,10 @@ export const Library: React.FC = () => {
                     key={cat}
                     type="button"
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
+                    className={`px-4.5 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 border whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
                       selectedCategory === cat
-                        ? 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/10'
-                        : 'bg-slate-900/40 text-slate-400 border-slate-900 hover:text-slate-200'
+                        ? 'bg-[#d35d3b] text-white border-[#d35d3b] shadow-lg shadow-[#d35d3b]/10'
+                        : 'bg-[#1e1a18] text-[#FAF6EE]/60 border-[#FAF6EE]/10 hover:text-white'
                     }`}
                   >
                     {cat}
@@ -344,8 +347,8 @@ export const Library: React.FC = () => {
                 ))}
               </div>
 
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">
-                Select a short piece to start logging today's habit:
+              <p className="text-[10px] font-black text-[#f09f80] uppercase tracking-widest pl-1">
+                Select a cozy reading path to begin:
               </p>
               
               <div className="grid grid-cols-1 gap-4">
@@ -354,31 +357,31 @@ export const Library: React.FC = () => {
                   .map((story) => (
                     <div
                       key={story.id}
-                      className="p-5 bg-slate-900/30 border border-slate-900 hover:border-slate-800/80 rounded-2xl transition duration-300 flex flex-col justify-between gap-4"
+                      className="p-5 bg-[#faf6ee] text-[#2c2724] border border-[#FAF6EE]/20 rounded-3xl transition duration-300 flex flex-col justify-between gap-4 interactive-card glow-card group cursor-pointer"
                     >
                       <div>
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                           {story.genre_tags.map((tag) => (
                             <span
                               key={tag}
-                              className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/10"
+                              className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#d35d3b]/15 text-[#d35d3b] border border-[#d35d3b]/10"
                             >
                               {tag}
                             </span>
                           ))}
-                          <span className="text-[10px] text-slate-500 font-bold ml-auto">
+                          <span className="text-[9px] text-[#2c2724]/60 font-black ml-auto">
                             ⏱️ {story.estimated_minutes} min read
                           </span>
                         </div>
-                        <h3 className="text-lg font-extrabold text-white leading-tight mb-1">{story.title}</h3>
-                        <p className="text-slate-400 text-xs">by {story.author}</p>
+                        <h3 className="text-lg font-black font-serif text-[#2c2724] leading-snug mb-1 group-hover:text-[#d35d3b] transition">{story.title}</h3>
+                        <p className="text-[#2c2724]/60 text-xs italic">by {story.author}</p>
                       </div>
 
                       <button
                         onClick={() => navigate(`/reader?storyId=${story.id}`)}
-                        className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold rounded-xl text-xs tracking-wide transition cursor-pointer text-center"
+                        className="w-full py-3 bg-[#d35d3b] hover:bg-[#d35d3b]/90 text-white font-black rounded-2xl text-[10px] tracking-wider uppercase transition cursor-pointer text-center"
                       >
-                        Read Now
+                        📖 Read Now
                       </button>
                     </div>
                   ))}
@@ -390,19 +393,19 @@ export const Library: React.FC = () => {
           {activeTab === 'my-books' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <p className="text-[10px] font-black text-[#FAF6EE]/50 uppercase tracking-widest">
                   Track your physical & Kindle books:
                 </p>
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="px-3 py-1.5 bg-orange-500 hover:bg-orange-400 transition font-bold rounded-xl text-[10px] uppercase tracking-wider text-white cursor-pointer"
+                  className="px-3.5 py-2 bg-[#d35d3b] hover:bg-[#d35d3b]/90 transition font-black rounded-xl text-[9px] uppercase tracking-wider text-white cursor-pointer"
                 >
                   + Add Book
                 </button>
               </div>
 
               {myBooks.length === 0 ? (
-                <div className="p-8 text-center bg-slate-900/20 border border-dashed border-slate-900 rounded-2xl text-slate-500 font-bold text-sm">
+                <div className="p-8 text-center bg-[#1e1a18] border border-dashed border-[#FAF6EE]/15 rounded-3xl text-[#FAF6EE]/40 font-bold text-xs">
                   No books added yet. Click "+ Add Book" to track external reading material!
                 </div>
               ) : (
@@ -410,7 +413,7 @@ export const Library: React.FC = () => {
                   {myBooks.map((book) => (
                     <div
                       key={book.id}
-                      className="p-4 bg-slate-900/30 border border-slate-900 hover:border-slate-800/80 rounded-2xl flex items-center gap-4 transition duration-300"
+                      className="p-4 bg-[#faf6ee] text-[#2c2724] border border-[#FAF6EE]/20 rounded-3xl flex items-center gap-4 transition duration-300 interactive-card glow-card group"
                     >
                       {/* Book Cover */}
                       {book.cover_image_url ? (
@@ -420,48 +423,48 @@ export const Library: React.FC = () => {
                           className="w-10 h-14 object-cover rounded-lg shadow-md shrink-0 select-none"
                         />
                       ) : (
-                        <div className="w-10 h-14 bg-gradient-to-br from-purple-600 to-indigo-800 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-md shrink-0 select-none">
+                        <div className="w-10 h-14 bg-gradient-to-br from-[#1e1a18] to-[#2c2724] border border-[#FAF6EE]/10 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-md shrink-0 select-none">
                           📖
                         </div>
                       )}
 
                       {/* Info */}
-                      <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex-1 min-w-0 space-y-1 text-left">
                         <div className="flex justify-between items-baseline gap-2">
-                          <h3 className="font-extrabold text-white text-sm truncate">{book.title}</h3>
+                          <h3 className="font-black font-serif text-[#2c2724] text-sm truncate group-hover:text-[#d35d3b] transition">{book.title}</h3>
                           <span
-                            className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                            className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border ${
                               book.status === 'finished'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
-                                : 'bg-purple-500/10 text-purple-400 border border-purple-500/10'
+                                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                                : 'bg-[#d35d3b]/10 text-[#d35d3b] border-[#d35d3b]/20'
                             }`}
                           >
                             {book.status}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 truncate">by {book.author}</p>
+                        <p className="text-xs text-[#2c2724]/60 truncate">by {book.author}</p>
 
                         <div className="space-y-1 pt-1">
-                          <div className="flex justify-between text-[10px] text-slate-400">
+                          <div className="flex justify-between text-[10px] text-[#2c2724]/70 font-semibold">
                             <span>{book.current_page || 0} / {book.total_length} pages read</span>
                             <span>{book.progress_percent}%</span>
                           </div>
-                          <div className="w-full bg-slate-950 h-1 rounded-full overflow-hidden">
+                          <div className="w-full bg-[#2c2724]/10 h-1.5 rounded-full overflow-hidden border border-[#2c2724]/5">
                             <div
-                              className="bg-purple-500 h-full rounded-full transition-all duration-300"
+                              className="bg-[#d35d3b] h-full rounded-full transition-all duration-300"
                               style={{ width: `${book.progress_percent}%` }}
                             />
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center justify-between pt-2 border-t border-[#2c2724]/5 mt-2">
                           {book.status !== 'finished' ? (
                             <button
                               onClick={() => {
                                 setActiveBookToLog(book);
                                 setPagesLogged('');
                               }}
-                              className="text-xs font-bold text-orange-400 hover:text-orange-300 cursor-pointer"
+                              className="text-xs font-bold text-[#d35d3b] hover:text-[#d35d3b]/80 cursor-pointer"
                             >
                               Log Pages
                             </button>
