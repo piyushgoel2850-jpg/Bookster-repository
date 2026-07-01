@@ -65,30 +65,37 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-28 px-6 pt-6 max-w-md mx-auto relative select-none">
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-28 px-6 pt-6 max-w-md mx-auto relative overflow-hidden select-none">
+      {/* Background Glowing Circles */}
+      <div className="absolute top-10 left-[-40px] w-56 h-56 bg-purple-600/10 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute top-1/2 right-[-40px] w-56 h-56 bg-orange-600/10 rounded-full blur-[80px] pointer-events-none" />
+
       {/* Top Banner Header */}
-      <header className="flex items-center justify-between mb-8">
+      <header className="flex items-center justify-between mb-8 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-xl">
+          <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-xl shadow-md select-none transform hover:rotate-12 transition">
             📖
           </div>
           <div>
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Level {level}</h2>
-            <h1 className="font-extrabold text-white text-base tracking-tight leading-none">
-              {profile?.display_name || 'Reader'}
-            </h1>
+            <div className="flex items-baseline gap-1.5">
+              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Level {level}</h2>
+              <span className="text-[9px] text-purple-400 font-extrabold uppercase">({xp % 100}/100 XP)</span>
+            </div>
+            <div className="w-16 bg-slate-950 h-1 rounded-full overflow-hidden mt-1 border border-slate-900">
+              <div className="bg-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${xp % 100}%` }} />
+            </div>
           </div>
         </div>
 
         {/* Stats Indicator */}
-        <div className="flex items-center gap-4">
-          {/* XP */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl text-sm font-black">
+        <div className="flex items-center gap-2">
+          {/* XP Badge */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl text-xs font-black shadow-md hover:scale-105 transition cursor-pointer">
             ⚡ <span>{xp} XP</span>
           </div>
 
-          {/* Streak Flame */}
-          <div className="flex items-center gap-1 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-500 rounded-xl text-sm font-black animate-pulse">
+          {/* Streak Flame Badge */}
+          <div className="flex items-center gap-1 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-500 rounded-xl text-xs font-black shadow-md hover:scale-105 active:scale-95 transition cursor-pointer animate-pulse">
             🔥 <span>{streak?.current_streak || 0}</span>
           </div>
         </div>
@@ -99,15 +106,15 @@ export const Home: React.FC = () => {
           Loading library dashboard...
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-8 relative z-10">
           {/* Daily Goal Card */}
-          <section className="bg-slate-900/60 border border-slate-900 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+          <section className="bg-slate-900/60 border border-slate-900 rounded-2xl p-5 shadow-lg relative overflow-hidden interactive-card glow-card group cursor-pointer">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h2 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-1">Daily Habit</h2>
-                <h3 className="text-lg font-extrabold text-white">Daily Reading Target</h3>
+                <h3 className="text-lg font-extrabold text-white group-hover:text-orange-400 transition">Daily Reading Target</h3>
               </div>
-              <span className="text-2xl">⏳</span>
+              <span className="text-2xl transform group-hover:scale-110 group-hover:rotate-12 transition">⏳</span>
             </div>
 
             {/* Progress ring/bar */}
@@ -126,21 +133,21 @@ export const Home: React.FC = () => {
               </div>
             </div>
             {goalProgressPercent >= 100 && (
-              <div className="mt-3 text-xs text-emerald-400 font-bold flex items-center gap-1">
+              <div className="mt-3 text-xs text-emerald-400 font-bold flex items-center gap-1 animate-bounce">
                 🎉 Daily goal completed! +50 XP Active
               </div>
             )}
           </section>
 
           {/* Core loop Resume Card */}
-          <section className="bg-slate-900/40 border border-slate-900 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
+          <section className="bg-slate-900/40 border border-slate-900 rounded-3xl p-6 shadow-2xl relative overflow-hidden interactive-card glow-card group cursor-pointer">
             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
             <h2 className="text-xs font-black text-rose-500 uppercase tracking-widest mb-4">Continue Reading</h2>
 
             {activeBook || activeStory ? (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-black text-white truncate">
+                  <h3 className="text-xl font-black text-white truncate group-hover:text-orange-400 transition">
                     {activeBook ? activeBook.title : activeStory?.title}
                   </h3>
                   <p className="text-slate-400 text-sm truncate">
@@ -181,7 +188,7 @@ export const Home: React.FC = () => {
                       {todaysPick?.estimated_minutes} min read
                     </span>
                   </div>
-                  <h3 className="text-xl font-black text-white truncate">{todaysPick?.title}</h3>
+                  <h3 className="text-xl font-black text-white truncate group-hover:text-orange-400 transition">{todaysPick?.title}</h3>
                   <p className="text-slate-400 text-sm truncate">by {todaysPick?.author}</p>
                 </div>
 
