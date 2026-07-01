@@ -6,22 +6,6 @@ import { db } from '../lib/db';
 import type { UserBook } from '../lib/db';
 import type { SeedStory } from '../data/stories';
 
-interface FriendActivity {
-  id: string;
-  name: string;
-  avatar: string;
-  minsRead: number;
-  activeNow: boolean;
-}
-
-const MOCK_FRIEND_ACTIVITY: FriendActivity[] = [
-  { id: 'f1', name: 'Sarah L.', avatar: '🙋‍♀️', minsRead: 15, activeNow: true },
-  { id: 'f2', name: 'Michael K.', avatar: '🙋‍♂️', minsRead: 8, activeNow: false },
-  { id: 'f3', name: 'Zoe R.', avatar: '👩‍🎨', minsRead: 25, activeNow: true },
-  { id: 'f4', name: 'David P.', avatar: '👨‍💻', minsRead: 0, activeNow: false },
-  { id: 'f5', name: 'Anna W.', avatar: '👩‍⚕️', minsRead: 12, activeNow: false },
-];
-
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -208,28 +192,6 @@ export const Home: React.FC = () => {
                 </button>
               </div>
             )}
-          </section>
-
-          {/* Friends Activity */}
-          <section>
-            <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Friend Activity</h2>
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none -mx-6 px-6">
-              {MOCK_FRIEND_ACTIVITY.map((friend) => (
-                <div
-                  key={friend.id}
-                  className="flex flex-col items-center bg-slate-900/30 border border-slate-900/60 rounded-2xl p-3 shrink-0 text-center w-24 relative"
-                >
-                  {friend.activeNow && (
-                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
-                  )}
-                  <span className="text-3xl mb-1 select-none">{friend.avatar}</span>
-                  <span className="text-xs font-extrabold text-white truncate w-full">{friend.name}</span>
-                  <span className="text-[10px] text-slate-500 font-bold mt-1">
-                    {friend.minsRead > 0 ? `Read ${friend.minsRead}m` : 'Not read yet'}
-                  </span>
-                </div>
-              ))}
-            </div>
           </section>
         </div>
       )}
