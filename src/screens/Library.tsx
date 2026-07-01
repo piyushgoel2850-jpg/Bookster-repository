@@ -16,6 +16,9 @@ export const Library: React.FC = () => {
   const [stories, setStories] = useState<SeedStory[]>([]);
   const [myBooks, setMyBooks] = useState<UserBook[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const ALL_CATEGORIES = ['All', 'Philosophy', 'Fiction', 'Mystery', 'Self-Improvement', 'Fantasy'];
 
   // Form State
   const [showAddForm, setShowAddForm] = useState(false);
@@ -198,41 +201,62 @@ export const Library: React.FC = () => {
           {/* TAB 1: CURATED PATHS */}
           {activeTab === 'paths' && (
             <div className="space-y-4">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              {/* Category selector chips */}
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {ALL_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
+                      selectedCategory === cat
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/10'
+                        : 'bg-slate-900/40 text-slate-400 border-slate-900 hover:text-slate-200'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">
                 Select a short piece to start logging today's habit:
               </p>
+              
               <div className="grid grid-cols-1 gap-4">
-                {stories.map((story) => (
-                  <div
-                    key={story.id}
-                    className="p-5 bg-slate-900/30 border border-slate-900 hover:border-slate-800/80 rounded-2xl transition duration-300 flex flex-col justify-between gap-4"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        {story.genre_tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/10"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        <span className="text-[10px] text-slate-500 font-bold ml-auto">
-                          ⏱️ {story.estimated_minutes} min read
-                        </span>
-                      </div>
-                      <h3 className="text-lg font-extrabold text-white leading-tight mb-1">{story.title}</h3>
-                      <p className="text-slate-400 text-xs">by {story.author}</p>
-                    </div>
-
-                    <button
-                      onClick={() => navigate(`/reader?storyId=${story.id}`)}
-                      className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold rounded-xl text-xs tracking-wide transition cursor-pointer text-center"
+                {stories
+                  .filter((story) => selectedCategory === 'All' || story.genre_tags.includes(selectedCategory))
+                  .map((story) => (
+                    <div
+                      key={story.id}
+                      className="p-5 bg-slate-900/30 border border-slate-900 hover:border-slate-800/80 rounded-2xl transition duration-300 flex flex-col justify-between gap-4"
                     >
-                      Read Now
-                    </button>
-                  </div>
-                ))}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          {story.genre_tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/10"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          <span className="text-[10px] text-slate-500 font-bold ml-auto">
+                            ⏱️ {story.estimated_minutes} min read
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-extrabold text-white leading-tight mb-1">{story.title}</h3>
+                        <p className="text-slate-400 text-xs">by {story.author}</p>
+                      </div>
+
+                      <button
+                        onClick={() => navigate(`/reader?storyId=${story.id}`)}
+                        className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold rounded-xl text-xs tracking-wide transition cursor-pointer text-center"
+                      >
+                        Read Now
+                      </button>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
