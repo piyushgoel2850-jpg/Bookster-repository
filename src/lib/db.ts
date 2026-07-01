@@ -32,6 +32,7 @@ export interface UserBook {
   title: string;
   author: string;
   total_length: number; // pages/minutes
+  current_page?: number; // pages read so far
   progress_percent: number;
   status: 'reading' | 'finished';
   cover_image_url?: string;
@@ -44,7 +45,19 @@ export interface ReadingSession {
   content_id?: string | null;
   book_id?: string | null;
   duration_minutes: number;
+  pages_read?: number | null;
+  xp_awarded?: number;
+  time_since_last_session_minutes?: number | null;
+  plausibility_flag?: boolean;
   completed_at: string;
+}
+
+export interface BookReflection {
+  id: string;
+  book_id: string;
+  user_id: string;
+  text: string;
+  created_at: string;
 }
 
 export interface Reflection {
@@ -268,6 +281,7 @@ export const db = {
       title,
       author,
       total_length: totalLength,
+      current_page: 0,
       progress_percent: 0,
       status: 'reading',
       cover_image_url: coverImageUrl,
@@ -298,7 +312,8 @@ export const db = {
   async updateUserBookProgress(
     userId: string,
     bookId: string,
-    progressPercent: number
+    progressPercent: number,
+    currentPage?: number
   ): Promise<void> {
     const status = progressPercent >= 100 ? 'finished' : 'reading';
 
@@ -306,7 +321,7 @@ export const db = {
       try {
         const { error } = await supabase
           .from('user_books')
-          .update({ progress_percent: progressPercent, status })
+          .update({ progress_percent: progressPercent, status, current_page: currentPage })
           .eq('id', bookId)
           .eq('user_id', userId);
         if (!error) return;
@@ -320,6 +335,9 @@ export const db = {
     if (book) {
       book.progress_percent = progressPercent;
       book.status = status;
+      if (currentPage !== undefined) {
+        book.current_page = currentPage;
+      }
       setLocal('user_books', books);
     }
   },
@@ -348,13 +366,37 @@ export const db = {
     userId: string,
     durationMinutes: number,
     contentId?: string | null,
-    bookId?: string | null
+    bookId?: string | null,
+    pagesRead?: number | null,
+    xpAwarded?: number
   ): Promise<ReadingSession> {
+    // 1. Calculate time_since_last_session_minutes
+    const allSessions = await this.getReadingSessions(userId);
+    let timeSinceLastSessionMinutes: number | null = null;
+    if (allSessions && allSessions.length > 0) {
+      const lastSession = allSessions[0];
+      const diffMs = new Date().getTime() - new Date(lastSession.completed_at).getTime();
+      timeSinceLastSessionMinutes = Math.max(0, Math.floor(diffMs / (1000 * 60)));
+    }
+
+    // 2. Calculate plausibility_flag (velocity limit: 3 pages per minute)
+    let plausibilityFlag = true;
+    if (pagesRead && pagesRead > 0) {
+      const ppm = pagesRead / Math.max(1, durationMinutes);
+      if (ppm > 3) {
+        plausibilityFlag = false;
+      }
+    }
+
     const session: Omit<ReadingSession, 'id'> = {
       user_id: userId,
       duration_minutes: durationMinutes,
       content_id: contentId || null,
       book_id: bookId || null,
+      pages_read: pagesRead || null,
+      xp_awarded: xpAwarded || 0,
+      time_since_last_session_minutes: timeSinceLastSessionMinutes,
+      plausibility_flag: plausibilityFlag,
       completed_at: new Date().toISOString(),
     };
 
@@ -447,6 +489,57 @@ export const db = {
     }
     const reflections = getLocal<Reflection[]>('reflections', []);
     return reflections.filter((r) => r.user_id === userId);
+  },
+
+  // Book Reflections (Journal entries)
+  async addBookReflection(
+    userId: string,
+    bookId: string,
+    text: string
+  ): Promise<BookReflection> {
+    const reflection: Omit<BookReflection, 'id'> = {
+      book_id: bookId,
+      user_id: userId,
+      text,
+      created_at: new Date().toISOString(),
+    };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('book_reflections')
+          .insert(reflection)
+          .select()
+          .single();
+        if (!error && data) return data;
+      } catch (e) {
+        console.warn('Supabase book reflection insert error, falling back to local:', e);
+      }
+    }
+
+    const refs = getLocal<BookReflection[]>('book_reflections', []);
+    const id = Math.random().toString();
+    const createdRef = { ...reflection, id };
+    refs.push(createdRef);
+    setLocal('book_reflections', refs);
+    return createdRef;
+  },
+
+  async getBookReflections(userId: string): Promise<BookReflection[]> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from('book_reflections')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        if (!error && data) return data;
+      } catch (e) {
+        console.warn('Supabase book reflections fetch error, falling back to local:', e);
+      }
+    }
+    const refs = getLocal<BookReflection[]>('book_reflections', []);
+    return refs.filter((r) => r.user_id === userId);
   },
 
   // Badges

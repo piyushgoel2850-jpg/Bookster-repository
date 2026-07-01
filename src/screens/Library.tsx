@@ -10,7 +10,7 @@ import { BottomNav } from '../components/BottomNav';
 export const Library: React.FC = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { xp, streak } = useGame();
+  const { xp, streak, refreshStats } = useGame();
 
   const [activeTab, setActiveTab] = useState<'paths' | 'my-books'>('paths');
   const [stories, setStories] = useState<SeedStory[]>([]);
@@ -34,7 +34,13 @@ export const Library: React.FC = () => {
 
   // Update Progress Modal State
   const [activeBookToLog, setActiveBookToLog] = useState<UserBook | null>(null);
-  const [newProgress, setNewProgress] = useState<number>(0);
+  const [pagesLogged, setPagesLogged] = useState<string>('');
+  const [showLogSuccess, setShowLogSuccess] = useState(false);
+  const [xpGainedSession, setXpGainedSession] = useState(0);
+
+  // Finished book reflection note states
+  const [finishedBookForReflection, setFinishedBookForReflection] = useState<UserBook | null>(null);
+  const [reflectionNoteText, setReflectionNoteText] = useState('');
 
   const handleSearchBooks = async (query: string) => {
     setSearchQuery(query);
@@ -123,20 +129,68 @@ export const Library: React.FC = () => {
 
   const handleLogProgressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile || !activeBookToLog) return;
+    if (!profile || !activeBookToLog || !pagesLogged) return;
 
     try {
-      await db.updateUserBookProgress(profile.id, activeBookToLog.id, newProgress);
+      const pagesNum = parseInt(pagesLogged) || 0;
+      if (pagesNum <= 0) return;
+
+      const currentPages = activeBookToLog.current_page || 0;
+      const newPages = Math.min(activeBookToLog.total_length, currentPages + pagesNum);
+      const newPercent = Math.round((newPages / activeBookToLog.total_length) * 100);
+
+      // Core formula: 10 XP per page read
+      const xpEarned = pagesNum * 10;
+
+      // 1. Award XP immediately
+      await db.addXP(profile.id, xpEarned, 'book-pages');
+
+      // 2. Log session with pages_read and calculated telemetry
+      await db.addReadingSession(profile.id, 1, null, activeBookToLog.id, pagesNum, xpEarned);
+
+      // 3. Update book page count and status
+      await db.updateUserBookProgress(profile.id, activeBookToLog.id, newPercent, newPages);
+
+      // Refresh Stats immediately in GameContext
+      await refreshStats();
+
+      // Show immediate success popup
+      setXpGainedSession(xpEarned);
+      setShowLogSuccess(true);
+
+      const finalBookRef = { ...activeBookToLog, current_page: newPages, progress_percent: newPercent };
+
+      // Reset active book logging flow
       setActiveBookToLog(null);
-      
-      // If completed, check if we should show milestone celebration
-      if (newProgress >= 100) {
-        navigate('/milestone');
-      } else {
+      setPagesLogged('');
+
+      // Auto dismiss success screen after 2.5 seconds
+      setTimeout(() => {
+        setShowLogSuccess(false);
         fetchLibraryData();
-      }
+
+        // If completed progress, trigger the Finished Book Reflection prompt
+        if (newPercent >= 100) {
+          setFinishedBookForReflection(finalBookRef);
+        }
+      }, 2500);
+
     } catch (e) {
-      console.error('Error updating progress:', e);
+      console.error('Error logging page progress:', e);
+    }
+  };
+
+  const handleSaveReflectionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile || !finishedBookForReflection || !reflectionNoteText.trim()) return;
+
+    try {
+      await db.addBookReflection(profile.id, finishedBookForReflection.id, reflectionNoteText);
+      setFinishedBookForReflection(null);
+      setReflectionNoteText('');
+      fetchLibraryData();
+    } catch (e) {
+      console.error('Error saving book reflection:', e);
     }
   };
 
@@ -318,7 +372,7 @@ export const Library: React.FC = () => {
 
                         <div className="space-y-1 pt-1">
                           <div className="flex justify-between text-[10px] text-slate-400">
-                            <span>Progress</span>
+                            <span>{book.current_page || 0} / {book.total_length} pages read</span>
                             <span>{book.progress_percent}%</span>
                           </div>
                           <div className="w-full bg-slate-950 h-1 rounded-full overflow-hidden">
@@ -334,11 +388,11 @@ export const Library: React.FC = () => {
                             <button
                               onClick={() => {
                                 setActiveBookToLog(book);
-                                setNewProgress(book.progress_percent);
+                                setPagesLogged('');
                               }}
                               className="text-xs font-bold text-orange-400 hover:text-orange-300 cursor-pointer"
                             >
-                              Log Session
+                              Log Pages
                             </button>
                           ) : (
                             <span className="text-[10px] text-emerald-400 font-extrabold flex items-center gap-1">
@@ -473,56 +527,113 @@ export const Library: React.FC = () => {
         </div>
       )}
 
-      {/* Log Progress Slide Modal */}
+      {/* Log Pages Modal Dialg */}
       {activeBookToLog && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-6">
           <form
             onSubmit={handleLogProgressSubmit}
-            className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm space-y-6 shadow-2xl"
+            className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl"
           >
             <div className="space-y-1">
-              <h3 className="text-lg font-black text-white">Log session: {activeBookToLog.title}</h3>
-              <p className="text-xs text-slate-500">Update your current reading percentage.</p>
+              <h3 className="text-lg font-black text-white">Log pages read</h3>
+              <p className="text-xs text-slate-500">For book: "{activeBookToLog.title}"</p>
             </div>
 
-            {/* Slider */}
-            <div className="space-y-3">
-              <div className="flex justify-between font-bold text-sm">
-                <span className="text-slate-400">Progress Percent</span>
-                <span className="text-orange-400 text-base">{newProgress}%</span>
-              </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400">How many pages did you read today?</label>
               <input
-                type="range"
-                min={activeBookToLog.progress_percent}
-                max="100"
-                value={newProgress}
-                onChange={(e) => setNewProgress(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-orange-500 outline-none"
+                type="number"
+                required
+                min="1"
+                placeholder="E.g., 25"
+                value={pagesLogged}
+                onChange={(e) => setPagesLogged(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-850 text-slate-100 rounded-2xl px-4 py-3 outline-none focus:border-orange-500 text-center text-lg font-black"
+                autoFocus
               />
-              <div className="flex justify-between text-[10px] text-slate-600 font-bold">
-                <span>Start ({activeBookToLog.progress_percent}%)</span>
-                <span>Finished (100%)</span>
-              </div>
             </div>
 
-            {/* Simulated Timer check option */}
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-[11px] text-slate-400 leading-relaxed">
-              💡 **Daily Streak Sync**: Manual entries will update your reading progress but don't count towards the active daily target timer directly. Read a curated story to log daily XP.
-            </div>
-
-            <div className="flex gap-4">
+            <div className="flex gap-4 pt-2">
               <button
                 type="button"
-                onClick={() => setActiveBookToLog(null)}
-                className="flex-1 py-3 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 font-bold rounded-2xl text-xs cursor-pointer"
+                onClick={() => {
+                  setActiveBookToLog(null);
+                  setPagesLogged('');
+                }}
+                className="flex-1 py-3.5 bg-slate-950 hover:bg-slate-900 border border-slate-850 text-slate-400 font-bold rounded-2xl text-xs cursor-pointer text-center"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 py-3 bg-orange-500 hover:bg-orange-400 transition font-black rounded-2xl text-white text-xs cursor-pointer"
+                className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-400 active:bg-orange-600 transition font-black rounded-2xl text-white text-xs cursor-pointer text-center"
               >
-                Save Progress
+                Log Pages
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Log XP Success Toast/Overlay */}
+      {showLogSuccess && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center z-50 p-6 animate-in fade-in duration-200">
+          <div className="text-center space-y-4">
+            <span className="text-6xl animate-bounce block select-none">⚡✨</span>
+            <h2 className="text-2xl font-black text-white">Nice, that's logged!</h2>
+            <p className="text-orange-400 font-black text-lg">+{xpGainedSession} XP Gained!</p>
+            <p className="text-slate-400 text-xs font-semibold">Keep up the steady habit. Slow and steady wins!</p>
+          </div>
+        </div>
+      )}
+
+      {/* Finished Book Gentle Reflection Journal (Skippable, 1-tap, no guilt) */}
+      {finishedBookForReflection && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-6 select-none">
+          <form
+            onSubmit={handleSaveReflectionSubmit}
+            className="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm text-center space-y-5 shadow-2xl relative"
+          >
+            <span className="text-5xl block animate-bounce">🏆📚</span>
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white">You finished the book!</h3>
+              <p className="text-slate-400 text-xs">"{finishedBookForReflection.title}" is complete!</p>
+            </div>
+
+            <div className="space-y-2 text-left">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">
+                Your Reading Journal (Optional)
+              </label>
+              <textarea
+                placeholder="Want to jot a quick thought about it before you move on?"
+                value={reflectionNoteText}
+                onChange={(e) => setReflectionNoteText(e.target.value)}
+                className="w-full h-24 bg-slate-950 border border-slate-850 text-slate-100 rounded-2xl p-3.5 text-xs focus:border-orange-500 outline-none resize-none leading-relaxed"
+              />
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <button
+                type="submit"
+                disabled={!reflectionNoteText.trim()}
+                className={`w-full py-3.5 font-black rounded-2xl text-xs cursor-pointer text-center transition ${
+                  reflectionNoteText.trim()
+                    ? 'bg-orange-500 hover:bg-orange-400 text-white shadow-xl shadow-orange-500/10'
+                    : 'bg-slate-950 text-slate-600 border border-slate-850 cursor-not-allowed'
+                }`}
+              >
+                Save to Journal
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setFinishedBookForReflection(null);
+                  setReflectionNoteText('');
+                }}
+                className="w-full text-slate-500 hover:text-slate-400 text-xs font-bold transition py-1 text-center cursor-pointer"
+              >
+                Skip Notes (No pressure!)
               </button>
             </div>
           </form>

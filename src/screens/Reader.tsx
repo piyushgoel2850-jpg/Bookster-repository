@@ -43,10 +43,18 @@ export const Reader: React.FC = () => {
   const [sessionResults, setSessionResults] = useState<any | null>(null);
 
   // Reflection states
-  const [reflectionStep, setReflectionStep] = useState<'welcome' | 'text' | 'voice' | 'success' | 'done'>('welcome');
+  const [reflectionStep, setReflectionStep] = useState<
+    'welcome' | 'text' | 'voice' | 'success' | 'recap-welcome' | 'recap-quiz' | 'recap-done' | 'done'
+  >('welcome');
   const [reflectionText, setReflectionText] = useState('');
   const [voiceRecording, setVoiceRecording] = useState(false);
   const [voiceRecorded, setVoiceRecorded] = useState(false);
+
+  // Recap Quiz States
+  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+  const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [answersCorrectCount, setAnswersCorrectCount] = useState(0);
 
   // Local storage cache for last read story
   useEffect(() => {
@@ -128,7 +136,6 @@ export const Reader: React.FC = () => {
       const content = type === 'text' ? reflectionText : type === 'voice' ? 'Voice Note Recording (Placeholder)' : '';
       
       // Simulate adding reflection
-      // First, get the reading sessions to link to the last one
       const sessions = await db.getReadingSessions(user.id);
       if (sessions.length > 0) {
         await db.addReflection(user.id, sessions[0].id, type, content);
@@ -145,7 +152,55 @@ export const Reader: React.FC = () => {
       console.error('Failed to save reflection:', e);
     }
 
-    handleFinishNavigation();
+    handleCheckRecapTransition();
+  };
+
+  const handleCheckRecapTransition = () => {
+    if (story && story.recap_questions && story.recap_questions.length > 0) {
+      setReflectionStep('recap-welcome');
+    } else {
+      handleFinishNavigation();
+    }
+  };
+
+  const handleStartRecap = () => {
+    setCurrentQuestionIdx(0);
+    setSelectedOptionIdx(null);
+    setShowFeedback(false);
+    setAnswersCorrectCount(0);
+    setReflectionStep('recap-quiz');
+  };
+
+  const handleSelectOption = (idx: number) => {
+    if (showFeedback) return;
+    setSelectedOptionIdx(idx);
+    setShowFeedback(true);
+
+    const questions = story?.recap_questions || [];
+    const isCorrect = idx === questions[currentQuestionIdx].correct_index;
+    if (isCorrect) {
+      setAnswersCorrectCount((prev) => prev + 1);
+    }
+
+    setTimeout(() => {
+      if (currentQuestionIdx < questions.length - 1) {
+        setCurrentQuestionIdx((prev) => prev + 1);
+        setSelectedOptionIdx(null);
+        setShowFeedback(false);
+      } else {
+        // Finished all questions!
+        handleCompleteRecap();
+      }
+    }, 1500);
+  };
+
+  const handleCompleteRecap = async () => {
+    if (user) {
+      // Award recap bonus XP (+10 XP)
+      await db.addXP(user.id, 10, 'story-recap');
+      await refreshStats();
+    }
+    setReflectionStep('recap-done');
   };
 
   const handleFinishNavigation = () => {
@@ -551,10 +606,120 @@ export const Reader: React.FC = () => {
                       </p>
                     </div>
                     <button
-                      onClick={() => handleFinishNavigation()}
-                      className="w-full py-4 bg-white text-slate-950 hover:bg-slate-900 active:bg-slate-200 transition font-black rounded-2xl shadow-lg cursor-pointer"
+                      onClick={() => handleCheckRecapTransition()}
+                      className="w-full py-4 bg-white text-slate-950 hover:opacity-90 active:scale-98 transition font-black rounded-2xl shadow-lg cursor-pointer"
                     >
                       Awesome!
+                    </button>
+                  </div>
+                )}
+
+                {/* Recap Screen 1: Welcome/Invite */}
+                {reflectionStep === 'recap-welcome' && (
+                  <div className="space-y-6 py-4 select-none">
+                    <div className="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto text-4xl shadow-xl shadow-purple-500/20 animate-pulse">
+                      🧠
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-white">Story Recap Challenge!</h3>
+                      <p className="text-slate-400 text-xs leading-relaxed px-4">
+                        Take a quick, playful recap to see how well you remember this story & claim a <span className="text-orange-400 font-bold">+10 XP bonus!</span>
+                      </p>
+                    </div>
+                    <div className="space-y-3 pt-2">
+                      <button
+                        onClick={handleStartRecap}
+                        className="w-full py-4 bg-orange-500 hover:bg-orange-400 transition font-black rounded-2xl text-white shadow-xl cursor-pointer"
+                      >
+                        Let's Play!
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleFinishNavigation}
+                        className="w-full text-center text-xs text-slate-500 hover:text-slate-400 font-bold py-1 transition cursor-pointer"
+                      >
+                        Skip Recap (No pressure!)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recap Screen 2: Quiz Game */}
+                {reflectionStep === 'recap-quiz' && story?.recap_questions && (
+                  <div className="space-y-5 text-left select-none">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                      <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Mini-Game</span>
+                      <span className="text-[10px] font-bold text-slate-500">
+                        Q: {currentQuestionIdx + 1} of {story.recap_questions.length}
+                      </span>
+                    </div>
+
+                    <h4 className="text-sm font-extrabold text-white leading-relaxed">
+                      {story.recap_questions[currentQuestionIdx].question}
+                    </h4>
+
+                    <div className="space-y-2">
+                      {story.recap_questions[currentQuestionIdx].options.map((opt, idx) => {
+                        const correctIdx = story.recap_questions?.[currentQuestionIdx]?.correct_index;
+                        const isSelected = selectedOptionIdx === idx;
+                        const isCorrect = idx === correctIdx;
+
+                        let cardStyle = 'bg-slate-950/40 border-slate-850 hover:border-orange-500/50 hover:bg-slate-900/40';
+                        if (showFeedback) {
+                          if (isCorrect) {
+                            cardStyle = 'bg-emerald-500/10 border-emerald-500 text-emerald-400';
+                          } else if (isSelected) {
+                            cardStyle = 'bg-rose-500/10 border-rose-500 text-rose-400';
+                          } else {
+                            cardStyle = 'bg-slate-950/20 border-slate-900 opacity-40';
+                          }
+                        }
+
+                        return (
+                          <button
+                            key={opt}
+                            disabled={showFeedback}
+                            onClick={() => handleSelectOption(idx)}
+                            className={`w-full p-3.5 text-left rounded-xl border text-xs font-semibold transition-all duration-200 cursor-pointer flex items-center justify-between ${cardStyle}`}
+                          >
+                            <span>{opt}</span>
+                            {showFeedback && isCorrect && <span className="text-emerald-400">✓</span>}
+                            {showFeedback && isSelected && !isCorrect && <span className="text-rose-400">✗</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="pt-2 text-center">
+                      <button
+                        type="button"
+                        onClick={handleFinishNavigation}
+                        className="text-[10px] text-slate-500 hover:text-slate-400 font-bold transition cursor-pointer"
+                      >
+                        Skip recap quiz
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recap Screen 3: Completed Recap */}
+                {reflectionStep === 'recap-done' && (
+                  <div className="space-y-6 py-4 select-none">
+                    <div className="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-full flex items-center justify-center mx-auto text-4xl shadow-xl shadow-emerald-500/20 animate-bounce">
+                      🎉
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-white">Recap Finished!</h3>
+                      <p className="text-slate-400 text-xs leading-relaxed px-4">
+                        You answered <span className="text-emerald-400 font-bold">{answersCorrectCount} correct</span>! 
+                        Claimed your <span className="text-orange-400 font-black">+10 XP bonus!</span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleFinishNavigation}
+                      className="w-full py-4 bg-white text-slate-950 hover:bg-slate-100 active:scale-98 transition font-black rounded-2xl shadow-lg cursor-pointer"
+                    >
+                      Done & Return
                     </button>
                   </div>
                 )}

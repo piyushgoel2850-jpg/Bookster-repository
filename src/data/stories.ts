@@ -5,6 +5,11 @@ export interface SeedStory {
   genre_tags: string[];
   estimated_minutes: number;
   body_text: string;
+  recap_questions?: {
+    question: string;
+    options: string[];
+    correct_index: number;
+  }[];
 }
 
 export const SEED_STORIES: SeedStory[] = [
@@ -25,6 +30,23 @@ The Hare was soon far out of sight, and to make the Tortoise feel very deeply ho
 The Tortoise meanwhile kept going slowly but steadily, and, after a time, passed the place where the Hare was sleeping. But the Hare slept on very peacefully; and when at last he did wake up, the Tortoise was near the goal. The Hare now ran his swiftest, but he could not overtake the Tortoise in time.
 
 Slow and steady wins the race. Keep this lesson close to heart as you build your reading habit! It's not about how fast you read, but the consistency of opening a book every single day.`,
+    recap_questions: [
+      {
+        question: "Why did the Hare stop during the race?",
+        options: ["He got lost", "He decided to take a nap", "He hurt his foot", "He went to look for food"],
+        correct_index: 1
+      },
+      {
+        question: "Who acted as the judge for the race?",
+        options: ["The Owl", "The Bear", "The Fox", "The Wolf"],
+        correct_index: 2
+      },
+      {
+        question: "What is the moral of this story?",
+        options: ["Fast and flashy wins the race", "Slow and steady wins the race", "Do not run in hot weather", "Never race your friends"],
+        correct_index: 1
+      }
+    ]
   },
   {
     id: 'story-tell-tale-heart',

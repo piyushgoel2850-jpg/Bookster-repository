@@ -106,14 +106,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unlockedBadges: [],
     };
 
-    // 1. Save reading session in database
-    await db.addReadingSession(user.id, durationMinutes, contentId, bookId);
-
-    // 2. Calculate base XP (10 XP per minute read)
+    // 1. Calculate base XP (10 XP per minute read)
     let sessionXp = durationMinutes * 10;
     result.xpGained += sessionXp;
 
-    // 3. Calculate today's total active minutes
+    // 2. Calculate today's total active minutes
     const todayStr = getLocalDateString();
     const yesterdayStr = getYesterdayDateString();
     const goalTarget = profile?.daily_goal_minutes || 10;
@@ -128,6 +125,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Goal achievement bonus: +50 XP
       result.xpGained += 50;
     }
+
+    // 3. Save reading session in database with telemetry
+    let pagesRead = Math.max(1, durationMinutes * 2);
+    if (contentId) {
+      try {
+        const stories = await db.getContentPieces();
+        const matched = stories.find((s) => s.id === contentId);
+        if (matched) {
+          const words = matched.body_text.split(/\s+/).length;
+          pagesRead = Math.max(1, Math.round(words / 250));
+        }
+      } catch (err) {
+        console.warn('Could not read story words length, using fallback pages:', err);
+      }
+    }
+    await db.addReadingSession(user.id, durationMinutes, contentId, bookId, pagesRead, result.xpGained);
 
     // 4. Update Streak
     let currentStreakData = streak || {
