@@ -7,11 +7,19 @@ import type { UserBook } from '../lib/db';
 import type { SeedStory } from '../data/stories';
 import { Confetti } from '../components/Confetti';
 
+const EMOJI_FEELINGS = [
+  { emoji: '💡', label: 'Inspired' },
+  { emoji: '🧠', label: 'Intrigued' },
+  { emoji: '🤔', label: 'Challenged' },
+  { emoji: '🧘', label: 'Calm' },
+  { emoji: '🔥', label: 'Motivated' }
+];
+
 export const Reader: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { xp, completeSession } = useGame();
+  const { xp, completeSession, refreshStats } = useGame();
 
   const storyId = searchParams.get('storyId');
   const bookId = searchParams.get('bookId');
@@ -34,7 +42,7 @@ export const Reader: React.FC = () => {
   const [sessionResults, setSessionResults] = useState<any | null>(null);
 
   // Reflection states
-  const [reflectionStep, setReflectionStep] = useState<'welcome' | 'text' | 'voice' | 'done'>('welcome');
+  const [reflectionStep, setReflectionStep] = useState<'welcome' | 'text' | 'voice' | 'success' | 'done'>('welcome');
   const [reflectionText, setReflectionText] = useState('');
   const [voiceRecording, setVoiceRecording] = useState(false);
   const [voiceRecorded, setVoiceRecorded] = useState(false);
@@ -124,8 +132,25 @@ export const Reader: React.FC = () => {
       if (sessions.length > 0) {
         await db.addReflection(user.id, sessions[0].id, type, content);
       }
+
+      if (type !== 'skip') {
+        // Award Reflection Bonus XP (+15 XP)
+        await db.addXP(user.id, 15, 'reflection');
+        await refreshStats();
+        setReflectionStep('success');
+        return;
+      }
     } catch (e) {
       console.error('Failed to save reflection:', e);
+    }
+
+    handleFinishNavigation();
+  };
+
+  const handleFinishNavigation = () => {
+    if (!sessionResults) {
+      navigate('/');
+      return;
     }
 
     // Check if the user reached a level-up or streak milestone to trigger milestone celebration!
@@ -263,21 +288,48 @@ export const Reader: React.FC = () => {
                     <div className="w-16 h-16 bg-gradient-to-tr from-orange-500 to-rose-500 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-xl shadow-orange-500/10">
                       ⚡
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <h2 className="text-2xl font-black text-white">Session Complete!</h2>
                       <p className="text-slate-400 text-sm">
                         You read for <span className="text-white font-bold">{sessionResults?.durationMinutes} mins</span> today.
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl">
-                        <span className="block text-2xl font-bold text-purple-400">+{sessionResults?.xpGained}</span>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">XP Earned</span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-2xl">
+                        <span className="block text-xl font-bold text-purple-400">+{sessionResults?.xpGained}</span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">XP Earned</span>
                       </div>
-                      <div className="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl">
-                        <span className="block text-2xl font-bold text-orange-400">🔥 +1</span>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Streak Days</span>
+                      <div className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-2xl">
+                        <span className="block text-xl font-bold text-orange-400">🔥 +1</span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Streak Days</span>
+                      </div>
+                    </div>
+
+                    {/* Reflection XP callout */}
+                    <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-orange-500/20 rounded-2xl p-4 text-center space-y-1">
+                      <span className="text-orange-400 font-black text-xs uppercase tracking-wider block">⚡ Reflection Bonus Active</span>
+                      <span className="text-[11px] text-slate-300 font-semibold block">Reflect on today's reading to lock in learnings & claim +15 bonus XP!</span>
+                    </div>
+
+                    {/* Quick Emojis selector */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-left pl-1">How did today's reading feel?</p>
+                      <div className="flex gap-2">
+                        {EMOJI_FEELINGS.map((feel) => (
+                          <button
+                            key={feel.label}
+                            onClick={() => {
+                              setReflectionText(`${feel.emoji} Feeling ${feel.label}: `);
+                              setReflectionStep('text');
+                            }}
+                            className="flex-1 py-3 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-orange-500/50 hover:scale-105 active:scale-95 transition rounded-2xl text-xl flex flex-col items-center justify-center gap-1 cursor-pointer"
+                            title={feel.label}
+                          >
+                            <span>{feel.emoji}</span>
+                            <span className="text-[8px] text-slate-500 font-bold tracking-wide uppercase leading-none">{feel.label}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
 
@@ -293,19 +345,21 @@ export const Reader: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="space-y-3 pt-4">
+                    <div className="space-y-3 pt-2">
                       <button
                         onClick={() => setReflectionStep('text')}
-                        className="w-full py-3.5 bg-orange-500 hover:bg-orange-400 transition font-black rounded-2xl text-white shadow-lg cursor-pointer"
+                        className="w-full py-4 bg-gradient-to-tr from-orange-500 via-rose-500 to-indigo-600 hover:opacity-95 transition font-black rounded-2xl text-white shadow-xl shadow-orange-500/10 cursor-pointer flex items-center justify-center gap-2"
                       >
-                        Reflect on today's reading
+                        ✍️ Type Reflection (+15 XP ⚡)
                       </button>
-                      <button
-                        onClick={() => handleSaveReflection('skip')}
-                        className="w-full py-3 text-slate-500 hover:text-slate-400 font-bold text-sm cursor-pointer"
-                      >
-                        Skip & Finish
-                      </button>
+                      <div className="pt-2">
+                        <button
+                          onClick={() => handleSaveReflection('skip')}
+                          className="text-xs text-slate-600 hover:text-slate-500 transition cursor-pointer hover:underline"
+                        >
+                          Skip Reflection (Forfeit +15 XP Bonus)
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -313,12 +367,15 @@ export const Reader: React.FC = () => {
                 {/* Reflection Screen 2: Text prompt */}
                 {reflectionStep === 'text' && (
                   <div className="space-y-4">
-                    <h3 className="text-xl font-black text-white">What's one thing that stood out today?</h3>
+                    <div className="text-center">
+                      <h3 className="text-xl font-black text-white">What's one thing that stood out today?</h3>
+                      <p className="text-orange-400 font-bold text-xs mt-1">✨ +15 XP reflection bonus will be added</p>
+                    </div>
                     <textarea
                       rows={4}
                       value={reflectionText}
                       onChange={(e) => setReflectionText(e.target.value)}
-                      placeholder="Write your quick reflection here..."
+                      placeholder="Write a quick reflection or select an emoji above..."
                       className="w-full bg-slate-950 border border-slate-800 focus:border-orange-500 text-slate-100 rounded-2xl p-4 outline-none text-sm resize-none"
                     />
 
@@ -334,14 +391,14 @@ export const Reader: React.FC = () => {
                         onClick={() => handleSaveReflection('text')}
                         className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-400 transition font-black rounded-2xl text-white cursor-pointer"
                       >
-                        Save Reflection
+                        Save & Claim +15 XP ⚡
                       </button>
                     </div>
                     <button
                       onClick={() => handleSaveReflection('skip')}
                       className="w-full text-center text-xs text-slate-600 font-bold py-1 hover:text-slate-500 cursor-pointer"
                     >
-                      Skip reflection
+                      Cancel and forfeit bonus XP
                     </button>
                   </div>
                 )}
@@ -349,8 +406,10 @@ export const Reader: React.FC = () => {
                 {/* Reflection Screen 3: Voice Note Stub */}
                 {reflectionStep === 'voice' && (
                   <div className="space-y-6">
-                    <h3 className="text-xl font-black text-white">Record a voice reflection</h3>
-                    <p className="text-slate-400 text-xs">Speak what you learned. Saved directly in your profile feed.</p>
+                    <div className="text-center">
+                      <h3 className="text-xl font-black text-white">Record a voice reflection</h3>
+                      <p className="text-orange-400 font-bold text-xs mt-1">✨ +15 XP reflection bonus will be added</p>
+                    </div>
 
                     <div className="py-8 flex flex-col items-center justify-center">
                       {voiceRecording ? (
@@ -399,14 +458,35 @@ export const Reader: React.FC = () => {
                         disabled={!voiceRecorded}
                         className="flex-1 py-3.5 bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-400 transition font-black rounded-2xl text-white cursor-pointer"
                       >
-                        Save Recording
+                        Save & Claim +15 XP ⚡
                       </button>
                     </div>
                     <button
                       onClick={() => handleSaveReflection('skip')}
                       className="w-full text-center text-xs text-slate-600 font-bold py-1 hover:text-slate-500 cursor-pointer"
                     >
-                      Skip reflection
+                      Cancel and forfeit bonus XP
+                    </button>
+                  </div>
+                )}
+
+                {/* Reflection Screen 4: Success state */}
+                {reflectionStep === 'success' && (
+                  <div className="space-y-6 py-4">
+                    <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 via-orange-500 to-yellow-300 rounded-full flex items-center justify-center mx-auto text-4xl shadow-xl shadow-orange-500/20 animate-bounce">
+                      🌟
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-2xl font-black text-white">Reflection Saved!</h3>
+                      <p className="text-slate-400 text-sm leading-relaxed px-4">
+                        Learnings locked in. You claimed your <span className="text-orange-400 font-black">+15 XP Reflection Bonus!</span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleFinishNavigation()}
+                      className="w-full py-4 bg-white text-slate-950 hover:bg-slate-900 active:bg-slate-200 transition font-black rounded-2xl shadow-lg cursor-pointer"
+                    >
+                      Awesome!
                     </button>
                   </div>
                 )}
