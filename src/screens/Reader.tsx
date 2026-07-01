@@ -3,8 +3,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/db';
-import type { UserBook } from '../lib/db';
+import type { UserBook, CoachMessage } from '../lib/db';
 import type { SeedStory } from '../data/stories';
+import { coachEngine } from '../lib/coachEngine';
 import { Confetti } from '../components/Confetti';
 
 const EMOJI_FEELINGS = [
@@ -142,6 +143,20 @@ export const Reader: React.FC = () => {
       }
 
       if (type !== 'skip') {
+        // Save the user's message to the Coach conversation log
+        const userMsg: CoachMessage = {
+          id: Math.random().toString(),
+          user_id: user.id,
+          book_id: book?.id || story?.id || null,
+          sender: 'user',
+          content: type === 'voice' ? `🎙️ [Voice Reflection]: ${content}` : `✍️ [Reflection]: ${content}`,
+          created_at: new Date().toISOString()
+        };
+        await db.saveCoachMessage(userMsg);
+
+        // Process with Reading Coach to award bonus XP (+10 XP) and get follow-up coach reply
+        await coachEngine.processReflection(user.id, content, book?.id || story?.id || null);
+
         // Award Reflection Bonus XP (+15 XP)
         await db.addXP(user.id, 15, 'reflection');
         await refreshStats();
@@ -605,12 +620,22 @@ export const Reader: React.FC = () => {
                         Learnings locked in. You claimed your <span className="text-orange-400 font-black">+15 XP Reflection Bonus!</span>
                       </p>
                     </div>
-                    <button
-                      onClick={() => handleCheckRecapTransition()}
-                      className="w-full py-4 bg-white text-slate-950 hover:opacity-90 active:scale-98 transition font-black rounded-2xl shadow-lg cursor-pointer"
-                    >
-                      Awesome!
-                    </button>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => {
+                          navigate(`/coach?bookId=${book?.id || story?.id || 'general'}`);
+                        }}
+                        className="w-full py-4 bg-gradient-to-tr from-[#d35d3b] to-[#f09f80] text-white hover:opacity-90 active:scale-98 transition font-black rounded-2xl shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
+                      >
+                        🦉 Discuss with Reading Coach
+                      </button>
+                      <button
+                        onClick={() => handleCheckRecapTransition()}
+                        className="w-full py-3.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white active:scale-98 transition font-bold rounded-2xl shadow-md cursor-pointer text-xs uppercase tracking-wider"
+                      >
+                        Maybe later
+                      </button>
+                    </div>
                   </div>
                 )}
 

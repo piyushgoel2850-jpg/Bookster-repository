@@ -87,6 +87,24 @@ export interface MilestoneVideo {
   created_at: string;
 }
 
+export interface CoachMessage {
+  id: string;
+  user_id: string;
+  book_id?: string | null;
+  sender: 'user' | 'coach';
+  content: string;
+  created_at: string;
+}
+
+export interface CoachProfile {
+  user_id: string;
+  reading_interests: string[];
+  favorite_themes: string[];
+  growth_milestones: string[];
+  recurring_insights: string[];
+  last_active_at: string;
+}
+
 const isSupabaseConfigured = (): boolean => {
   return !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
 };
@@ -650,5 +668,43 @@ export const db = {
     }
     const videos = getLocal<MilestoneVideo[]>('milestone_videos', []);
     return videos.filter((v) => v.user_id === userId);
+  },
+
+  // Reading Coach Storage APIs
+  async getCoachMessages(userId: string, bookId?: string | null): Promise<CoachMessage[]> {
+    const messages = getLocal<CoachMessage[]>('coach_messages', []);
+    return messages.filter(m => m.user_id === userId && (!bookId || m.book_id === bookId));
+  },
+
+  async saveCoachMessage(message: CoachMessage): Promise<CoachMessage> {
+    const messages = getLocal<CoachMessage[]>('coach_messages', []);
+    messages.push(message);
+    setLocal('coach_messages', messages);
+    return message;
+  },
+
+  async getCoachProfile(userId: string): Promise<CoachProfile> {
+    const profiles = getLocal<CoachProfile[]>('coach_profiles', []);
+    let prof = profiles.find(p => p.user_id === userId);
+    if (!prof) {
+      prof = {
+        user_id: userId,
+        reading_interests: [],
+        favorite_themes: [],
+        growth_milestones: [],
+        recurring_insights: [],
+        last_active_at: new Date().toISOString()
+      };
+    }
+    return prof;
+  },
+
+  async saveCoachProfile(profile: CoachProfile): Promise<CoachProfile> {
+    const profiles = getLocal<CoachProfile[]>('coach_profiles', []);
+    const idx = profiles.findIndex(p => p.user_id === profile.user_id);
+    if (idx >= 0) profiles[idx] = profile;
+    else profiles.push(profile);
+    setLocal('coach_profiles', profiles);
+    return profile;
   },
 };

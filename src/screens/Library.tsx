@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGame } from '../context/GameContext';
 import { db } from '../lib/db';
-import type { UserBook } from '../lib/db';
+import type { UserBook, CoachMessage } from '../lib/db';
 import type { SeedStory } from '../data/stories';
+import { coachEngine } from '../lib/coachEngine';
 import { BottomNav } from '../components/BottomNav';
 
 export const Library: React.FC = () => {
@@ -48,7 +49,7 @@ export const Library: React.FC = () => {
   // Interactive Self-Reflection overlays for logging >= 5 pages
   const [activeBookForSelfReflection, setActiveBookForSelfReflection] = useState<UserBook | null>(null);
   const [pagesLoggedForSelfReflection, setPagesLoggedForSelfReflection] = useState<number>(0);
-  const [selfReflectionStep, setSelfReflectionStep] = useState<'options' | 'text' | 'voice'>('options');
+  const [selfReflectionStep, setSelfReflectionStep] = useState<'options' | 'text' | 'voice' | 'success'>('options');
   const [selfReflectionText, setSelfReflectionText] = useState('');
   const [isRecordingVoiceSelfReflection, setIsRecordingVoiceSelfReflection] = useState(false);
   const [voiceRecordedSelfReflection, setVoiceRecordedSelfReflection] = useState(false);
@@ -209,28 +210,39 @@ export const Library: React.FC = () => {
         const textVal = type === 'text' ? selfReflectionText : 'Recorded Voice note summaries';
         await db.addBookReflection(profile.id, activeBookForSelfReflection.id, type, textVal);
         
+        // Save user message to Reading Coach conversation log
+        const userMsg: CoachMessage = {
+          id: Math.random().toString(),
+          user_id: profile.id,
+          book_id: activeBookForSelfReflection.id,
+          sender: 'user',
+          content: type === 'voice' ? `🎙️ [Voice Reflection]: ${textVal}` : `✍️ [Reflection]: ${textVal}`,
+          created_at: new Date().toISOString()
+        };
+        await db.saveCoachMessage(userMsg);
+
+        // Process with Reading Coach to award bonus XP (+10 XP) and save AI reply
+        await coachEngine.processReflection(profile.id, textVal, activeBookForSelfReflection.id);
+
         // Reflection bonus: +20 XP
         await db.addXP(profile.id, 20, 'book-reflection-bonus');
         await refreshStats();
         totalXPEarned += 20;
+
+        setXpGainedSession(totalXPEarned);
+        setSelfReflectionStep('success');
+        return;
       }
 
+      // If skip
       const finalBook = activeBookForSelfReflection;
       setActiveBookForSelfReflection(null);
+      fetchLibraryData();
 
-      // Show success screen with total XP gained (base + reflection bonus if any)
-      setXpGainedSession(totalXPEarned);
-      setShowLogSuccess(true);
-
-      setTimeout(() => {
-        setShowLogSuccess(false);
-        fetchLibraryData();
-
-        if (finalBook.progress_percent >= 100) {
-          setFinishedBookStep('options');
-          setFinishedBookForReflection(finalBook);
-        }
-      }, 2500);
+      if (finalBook.progress_percent >= 100) {
+        setFinishedBookStep('options');
+        setFinishedBookForReflection(finalBook);
+      }
 
     } catch (err) {
       console.error('Error saving self reflection:', err);
@@ -976,6 +988,49 @@ export const Library: React.FC = () => {
                     }`}
                   >
                     Save & Claim +20 XP
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selfReflectionStep === 'success' && (
+              <div className="space-y-6 py-4">
+                <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 via-orange-500 to-yellow-300 rounded-full flex items-center justify-center mx-auto text-4xl shadow-xl shadow-orange-500/20 animate-bounce">
+                  🌟
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black text-white font-serif">Reflection Saved!</h3>
+                  <p className="text-xs text-[#FAF6EE]/70 leading-relaxed px-4 font-semibold">
+                    Learnings locked in. You claimed your <span className="text-[#d35d3b] font-black">XP Reflection Bonus!</span>
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const book = activeBookForSelfReflection;
+                      setActiveBookForSelfReflection(null);
+                      fetchLibraryData();
+                      navigate(`/coach?bookId=${book?.id || 'general'}`);
+                    }}
+                    className="w-full py-4 bg-gradient-to-tr from-[#d35d3b] to-[#f09f80] text-white hover:opacity-90 active:scale-98 transition font-black rounded-2xl shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
+                  >
+                    🦉 Discuss with Reading Coach
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const book = activeBookForSelfReflection;
+                      setActiveBookForSelfReflection(null);
+                      fetchLibraryData();
+                      if (book && book.progress_percent >= 100) {
+                        setFinishedBookStep('options');
+                        setFinishedBookForReflection(book);
+                      }
+                    }}
+                    className="w-full py-3.5 bg-slate-950 border border-slate-850 text-slate-400 hover:text-white active:scale-98 transition font-bold rounded-2xl shadow-md cursor-pointer text-xs uppercase tracking-wider"
+                  >
+                    Maybe later
                   </button>
                 </div>
               </div>

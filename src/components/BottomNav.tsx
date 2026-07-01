@@ -10,7 +10,7 @@ export const BottomNav: React.FC = () => {
       label: 'Home',
       icon: (active: boolean) => (
         <svg
-          className={`w-6 h-6 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
+          className={`w-5 h-5 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
           fill={active ? 'currentColor' : 'none'}
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -29,7 +29,7 @@ export const BottomNav: React.FC = () => {
       label: 'Library',
       icon: (active: boolean) => (
         <svg
-          className={`w-6 h-6 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
+          className={`w-5 h-5 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
           fill={active ? 'currentColor' : 'none'}
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -44,11 +44,30 @@ export const BottomNav: React.FC = () => {
       ),
     },
     {
+      path: '/coach',
+      label: 'Coach',
+      icon: (active: boolean) => (
+        <svg
+          className={`w-5 h-5 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
+          fill={active ? 'currentColor' : 'none'}
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={active ? 0 : 2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+          />
+        </svg>
+      ),
+    },
+    {
       path: '/social',
       label: 'Social',
       icon: (active: boolean) => (
         <svg
-          className={`w-6 h-6 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
+          className={`w-5 h-5 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
           fill={active ? 'currentColor' : 'none'}
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -67,7 +86,7 @@ export const BottomNav: React.FC = () => {
       label: 'Profile',
       icon: (active: boolean) => (
         <svg
-          className={`w-6 h-6 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
+          className={`w-5 h-5 transition-transform duration-300 ${active ? 'scale-110' : ''}`}
           fill={active ? 'currentColor' : 'none'}
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -84,7 +103,7 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800/80 px-6 py-2 pb-safe z-40 shadow-xl max-w-md mx-auto rounded-t-2xl">
+    <nav className="fixed bottom-0 left-0 right-0 bg-[#1e1a18] border-t border-[#FAF6EE]/10 px-4 py-2 pb-safe z-40 shadow-xl max-w-md mx-auto rounded-t-2xl">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const active = location.pathname === item.path;
@@ -92,12 +111,12 @@ export const BottomNav: React.FC = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition duration-300 cursor-pointer ${
-                active ? 'text-orange-500' : 'text-slate-400 hover:text-slate-200'
+              className={`flex flex-col items-center gap-1.5 py-1 px-2.5 rounded-xl transition duration-300 cursor-pointer ${
+                active ? 'text-[#d35d3b]' : 'text-[#FAF6EE]/50 hover:text-white'
               }`}
             >
               <div className="relative">{item.icon(active)}</div>
-              <span className="text-[10px] font-bold tracking-wide uppercase">{item.label}</span>
+              <span className="text-[8px] font-black tracking-widest uppercase">{item.label}</span>
             </Link>
           );
         })}
@@ -105,3 +124,4 @@ export const BottomNav: React.FC = () => {
     </nav>
   );
 };
+export default BottomNav;
