@@ -186,7 +186,7 @@ export const db = {
           .select('amount')
           .eq('user_id', userId);
         if (!error && data) {
-          return data.reduce((sum, item) => sum + item.amount, 0);
+          return data.reduce((sum: number, item: any) => sum + item.amount, 0);
         }
       } catch (e) {
         console.warn('Supabase XP fetch error, falling back to local:', e);
