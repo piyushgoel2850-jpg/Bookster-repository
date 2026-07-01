@@ -116,6 +116,42 @@ So it is: we are not given a short life but we make it short, and we are not ill
 
 Why do we complain of Nature? She has shown herself kindly; life, if you know how to use it, is long. But one man is gripped by insatiable greed, another by a laborious dedication to useless tasks; one man is soaked in wine, another sluggish with idleness; one is worn out by political ambition, which is always at the mercy of others' judgments.
 
-No one yields possession of his lands to others, yet how readily we let others trespass on our lives! We are tight-fisted with our property, but throw away our time, the one thing in which it is right to be stingy.`,
+No one yields possession of his lands to others, yet how readily we let others trespass on our lives! We are tight-fisted with our property, but throw away our time, the one thing in which it is right to be stinging.`,
+  },
+  {
+    id: 'story-meditations',
+    title: 'Meditations: Control the Mind',
+    author: 'Marcus Aurelius',
+    genre_tags: ['Philosophy', 'Self-Improvement'],
+    estimated_minutes: 5,
+    body_text: `Do not waste what remains of your life in speculating about your neighbors, unless with a view to some mutual benefit. To do so is to lose the opportunity of doing something else. It blocks you from observing your own ruling center.
+
+Keep yourself then simple, good, pure, serious, free from affectation, a friend of justice, a worshiper of the gods, kind, affectionate, strenuous in all proper acts. Strive to continue to be such as philosophy wished to make you. Revere the gods, and help mankind. Life is short. There is only one fruit of our earthly existence—a holy disposition and acts for the common welfare.
+
+Remember that all things are only opinions, and opinion is in your power. Take away then, when you choose, your opinion, and like a mariner who has doubled the promontory, you will find a calm, a stable harbor, and a waveless gulf.`,
+  },
+  {
+    id: 'story-alice-wonderland',
+    title: 'Down the Rabbit-Hole',
+    author: 'Lewis Carroll',
+    genre_tags: ['Fiction', 'Fantasy'],
+    estimated_minutes: 6,
+    body_text: `Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, "and what is the use of a book," thought Alice "without pictures or conversations?"
+
+So she was considering in her own mind (as well as she could, for the hot day made her feel very sleepy and stupid), whether the pleasure of making a daisy-chain would be worth the trouble of getting up and picking the daisies, when suddenly a White Rabbit with pink eyes ran close by her.
+
+There was nothing so very remarkable in that; nor did Alice think it so very much out of the way to hear the Rabbit say to itself, "Oh dear! Oh dear! I shall be late!" (when she thought it over afterwards, it occurred to her that she ought to have wondered at this, but at the time it all seemed quite natural); but when the Rabbit actually took a watch out of its waistcoat-pocket, and looked at it, and then hurried on, Alice started to her feet, for it flashed across her mind that she had never before seen a rabbit with either a waistcoat-pocket, or a watch to take out of it, and burning with curiosity, she ran across the field after it, and fortunately was just in time to see it pop down a large rabbit-hole under the hedge.`,
+  },
+  {
+    id: 'story-sherlock-scandal',
+    title: 'A Scandal in Bohemia',
+    author: 'Arthur Conan Doyle',
+    genre_tags: ['Mystery', 'Fiction'],
+    estimated_minutes: 7,
+    body_text: `To Sherlock Holmes she is always the woman. I have seldom heard him mention her under any other name. In his eyes she eclipses and predominates the whole of her sex. It was not that he felt any emotion akin to love for Irene Adler. All emotions, and that one particularly, were abhorrent to his cold, precise but admirably balanced mind. He was, I take it, the most perfect reasoning and observing machine that the world has seen, but as a lover he would have placed himself in a false position.
+
+He never spoke of the softer passions, save with a gibe and a sneer. They were admirable things for the observer—excellent for drawing the veil from men’s motives and actions. But for the trained reasoner to admit such intrusions into his own delicate and finely adjusted temperament was to introduce a distracting factor which might throw a doubt upon all his mental results.
+
+I had seen little of Holmes lately. My marriage had drifted us away from each other. My own complete happiness, and the home-centred interests which rise up around the man who first finds himself master of his own establishment, were sufficient to absorb all my attention, while Holmes, who loathed every form of society with his whole Bohemian soul, remained in our lodgings in Baker Street, buried among his old books, and alternating from week to week between cocaine and ambition, the drowsiness of the drug, and the fierce energy of his own keen nature.`,
   }
-];
+]
