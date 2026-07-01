@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">bookster</string>
+    <string name="title_activity_main">bookster</string>
+    <string name="package_name">com.bookster.app</string>
+    <string name="custom_url_scheme">com.bookster.app</string>
+</resources>
