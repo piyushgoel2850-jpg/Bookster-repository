@@ -31,6 +31,7 @@ export const Reader: React.FC = () => {
   // Settings
   const [fontSize, setFontSize] = useState<number>(18); // px
   const [theme, setTheme] = useState<'dark' | 'light' | 'sepia'>('dark');
+  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
 
   // Session timer
   const [seconds, setSeconds] = useState<number>(0);
@@ -211,33 +212,100 @@ export const Reader: React.FC = () => {
           <span>{formatTime(seconds)}</span>
         </div>
 
-        {/* Appearance Drawer Controls */}
-        <div className="flex items-center gap-2">
-          {/* Theme Select */}
-          <button
-            onClick={() => setTheme((t) => (t === 'dark' ? 'light' : t === 'light' ? 'sepia' : 'dark'))}
-            className="p-2 rounded-full hover:bg-current/10 transition cursor-pointer text-lg"
-          >
-            {theme === 'dark' ? '☀️' : theme === 'light' ? '🍂' : '🌙'}
-          </button>
+        {/* Aa Settings Toggle */}
+        <button
+          onClick={() => setShowSettingsDrawer(!showSettingsDrawer)}
+          className="px-3.5 py-1.5 rounded-full hover:bg-current/10 transition border border-current/25 flex items-center gap-1.5 text-xs font-black tracking-wider uppercase cursor-pointer"
+        >
+          <span>Aa</span>
+          <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${showSettingsDrawer ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+      </header>
 
-          {/* Font Controls */}
-          <div className="flex items-center gap-1 bg-current/5 border border-current/10 rounded-full px-1">
+      {/* Floating Display Settings Panel */}
+      {showSettingsDrawer && (
+        <div className="absolute top-16 left-6 right-6 bg-slate-900 border border-slate-800 text-white p-5 rounded-3xl shadow-2xl z-40 space-y-4 select-none animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-800/60">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reader Settings</span>
             <button
-              onClick={() => setFontSize((s) => Math.max(14, s - 2))}
-              className="px-2 py-1 font-bold text-sm hover:text-orange-500"
+              onClick={() => setShowSettingsDrawer(false)}
+              className="text-slate-500 hover:text-slate-300 text-xs font-bold"
             >
-              A-
-            </button>
-            <button
-              onClick={() => setFontSize((s) => Math.min(28, s + 2))}
-              className="px-2 py-1 font-bold text-sm hover:text-orange-500"
-            >
-              A+
+              ✕
             </button>
           </div>
+
+          {/* Theme Selector (Day / Night / Sepia) */}
+          <div className="space-y-2">
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Reading Theme</span>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`py-2.5 px-1 rounded-2xl text-[10px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
+                  theme === 'light'
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/10'
+                    : 'bg-slate-950 text-slate-400 border-slate-850 hover:bg-slate-900/60'
+                }`}
+              >
+                <span className="text-base">☀️</span>
+                <span>Day Mode</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`py-2.5 px-1 rounded-2xl text-[10px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
+                  theme === 'dark'
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/10'
+                    : 'bg-slate-950 text-slate-400 border-slate-850 hover:bg-slate-900/60'
+                }`}
+              >
+                <span className="text-base">🌙</span>
+                <span>Night Mode</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('sepia')}
+                className={`py-2.5 px-1 rounded-2xl text-[10px] font-black uppercase tracking-wider flex flex-col items-center justify-center gap-1 border cursor-pointer transition ${
+                  theme === 'sepia'
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/10'
+                    : 'bg-slate-950 text-slate-400 border-slate-850 hover:bg-slate-900/60'
+                }`}
+              >
+                <span className="text-base">🍂</span>
+                <span>Sepia</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Font Sizing Controls */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-baseline">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Font Size</span>
+              <span className="text-xs font-bold text-orange-400">{fontSize}px</span>
+            </div>
+            <div className="flex items-center gap-3 bg-slate-950 border border-slate-850 rounded-2xl p-1">
+              <button
+                type="button"
+                onClick={() => setFontSize((s) => Math.max(14, s - 2))}
+                className="flex-1 py-2 font-black text-xs hover:text-orange-500 cursor-pointer"
+              >
+                A-
+              </button>
+              <div className="w-px h-6 bg-slate-800" />
+              <button
+                type="button"
+                onClick={() => setFontSize((s) => Math.min(28, s + 2))}
+                className="flex-1 py-2 font-black text-xs hover:text-orange-500 cursor-pointer"
+              >
+                A+
+              </button>
+            </div>
+          </div>
         </div>
-      </header>
+      )}
 
       {/* Reader Body Text Container */}
       <main className="max-w-2xl mx-auto px-6 py-10">
