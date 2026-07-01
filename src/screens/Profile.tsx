@@ -186,13 +186,19 @@ export const Profile: React.FC = () => {
                   return (
                     <div
                       key={book.id}
-                      className={`w-7 hover:w-8 hover:-translate-y-2 transition-all duration-300 rounded-t-md bg-gradient-to-t ${spineColor} border-t-2 border-x flex flex-col justify-end items-center py-2 shadow-md relative group cursor-help`}
+                      className={`w-7 hover:w-9 hover:-translate-y-3 hover:scale-105 transition-all duration-300 rounded-t-md bg-gradient-to-t ${spineColor} border-t-2 border-x flex flex-col justify-end items-center py-2 shadow-lg relative group cursor-help`}
                       style={{ height: `${80 + (idx % 3) * 12}px` }}
-                      title={`${book.title} by ${book.author}`}
                     >
+                      {/* Interactive Tooltip Card */}
+                      <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col bg-slate-900 border border-slate-800 text-white p-2.5 rounded-xl text-left w-36 shadow-2xl z-30 pointer-events-none select-none">
+                        <span className="text-[10px] font-black text-white leading-tight truncate block">{book.title}</span>
+                        <span className="text-[9px] text-slate-400 font-bold leading-normal truncate block">by {book.author}</span>
+                        <span className="text-[8px] text-orange-400 font-black uppercase tracking-wider mt-1.5 block">🏆 Completed</span>
+                      </div>
+
                       {/* Vertical text spine */}
                       <span
-                        className="text-[9px] font-black text-white/80 whitespace-nowrap overflow-hidden text-ellipsis tracking-wide select-none"
+                        className="text-[9px] font-black text-white/85 whitespace-nowrap overflow-hidden text-ellipsis tracking-wide select-none"
                         style={{
                           writingMode: 'vertical-rl',
                           textOrientation: 'mixed',
