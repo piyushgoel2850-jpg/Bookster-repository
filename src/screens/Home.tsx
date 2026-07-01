@@ -5,6 +5,7 @@ import { useGame } from '../context/GameContext';
 import { db } from '../lib/db';
 import type { UserBook } from '../lib/db';
 import type { SeedStory } from '../data/stories';
+import { BottomNav } from '../components/BottomNav';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -195,6 +196,9 @@ export const Home: React.FC = () => {
           </section>
         </div>
       )}
+
+      {/* Bottom Navigation Menu */}
+      <BottomNav />
     </div>
   );
 };
