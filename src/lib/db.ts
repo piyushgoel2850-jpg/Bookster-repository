@@ -34,6 +34,7 @@ export interface UserBook {
   total_length: number; // pages/minutes
   progress_percent: number;
   status: 'reading' | 'finished';
+  cover_image_url?: string;
   created_at: string;
 }
 
@@ -259,7 +260,8 @@ export const db = {
     userId: string,
     title: string,
     author: string,
-    totalLength: number
+    totalLength: number,
+    coverImageUrl?: string
   ): Promise<UserBook> {
     const newBook: Omit<UserBook, 'id'> = {
       user_id: userId,
@@ -268,6 +270,7 @@ export const db = {
       total_length: totalLength,
       progress_percent: 0,
       status: 'reading',
+      cover_image_url: coverImageUrl,
       created_at: new Date().toISOString(),
     };
 

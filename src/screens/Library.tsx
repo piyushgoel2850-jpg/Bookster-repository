@@ -22,10 +22,59 @@ export const Library: React.FC = () => {
   const [bookTitle, setBookTitle] = useState('');
   const [bookAuthor, setBookAuthor] = useState('');
   const [bookLength, setBookLength] = useState('');
+  
+  // Google Books Search API states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState('');
 
   // Update Progress Modal State
   const [activeBookToLog, setActiveBookToLog] = useState<UserBook | null>(null);
   const [newProgress, setNewProgress] = useState<number>(0);
+
+  const handleSearchBooks = async (query: string) => {
+    setSearchQuery(query);
+    if (query.trim().length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`
+      );
+      const data = await response.json();
+      if (data.items) {
+        const results = data.items.map((item: any) => {
+          const info = item.volumeInfo;
+          return {
+            title: info.title || '',
+            author: info.authors ? info.authors.join(', ') : 'Unknown Author',
+            pages: info.pageCount || 150,
+            cover: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '',
+          };
+        });
+        setSearchResults(results);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (e) {
+      console.error('Failed to query Google Books API:', e);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSelectBookResult = (book: any) => {
+    setBookTitle(book.title);
+    setBookAuthor(book.author);
+    setBookLength(book.pages.toString());
+    setCoverImageUrl(book.cover);
+    setSearchResults([]);
+    setSearchQuery('');
+  };
 
   const fetchLibraryData = async () => {
     if (!profile) return;
@@ -52,12 +101,14 @@ export const Library: React.FC = () => {
 
     try {
       const lengthNum = parseInt(bookLength) || 100;
-      await db.addUserBook(profile.id, bookTitle, bookAuthor, lengthNum);
+      await db.addUserBook(profile.id, bookTitle, bookAuthor, lengthNum, coverImageUrl);
       
       // Reset form
       setBookTitle('');
       setBookAuthor('');
       setBookLength('');
+      setCoverImageUrl('');
+      setSearchQuery('');
       setShowAddForm(false);
       
       // Refresh list
@@ -212,10 +263,18 @@ export const Library: React.FC = () => {
                       key={book.id}
                       className="p-4 bg-slate-900/30 border border-slate-900 hover:border-slate-800/80 rounded-2xl flex items-center gap-4 transition duration-300"
                     >
-                      {/* Simulated Book Spine Cover */}
-                      <div className="w-10 h-14 bg-gradient-to-br from-purple-600 to-indigo-800 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-md shrink-0 select-none">
-                        📖
-                      </div>
+                      {/* Book Cover */}
+                      {book.cover_image_url ? (
+                        <img
+                          src={book.cover_image_url}
+                          alt={book.title}
+                          className="w-10 h-14 object-cover rounded-lg shadow-md shrink-0 select-none"
+                        />
+                      ) : (
+                        <div className="w-10 h-14 bg-gradient-to-br from-purple-600 to-indigo-800 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-md shrink-0 select-none">
+                          📖
+                        </div>
+                      )}
 
                       {/* Info */}
                       <div className="flex-1 min-w-0 space-y-1">
@@ -289,17 +348,59 @@ export const Library: React.FC = () => {
           >
             <button
               type="button"
-              onClick={() => setShowAddForm(false)}
+              onClick={() => {
+                setShowAddForm(false);
+                setSearchQuery('');
+                setSearchResults([]);
+              }}
               className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-lg font-bold"
             >
               ✕
             </button>
             <h3 className="text-xl font-black text-white">Track an External Book</h3>
-            <p className="text-slate-400 text-xs">
-              Log progress for books you read offline (paperbacks, Kindle, audiobooks).
-            </p>
+            
+            {/* Google Books Search Bar */}
+            <div className="space-y-1 relative">
+              <label className="text-xs font-bold text-slate-400">Search Book Metadata (Autofill)</label>
+              <input
+                type="text"
+                placeholder="Type title or author to search..."
+                value={searchQuery}
+                onChange={(e) => handleSearchBooks(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-3 py-2 text-sm focus:border-orange-500 outline-none"
+              />
+              
+              {/* Autocomplete Dropdown List */}
+              {searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-slate-950 border border-slate-800 rounded-xl mt-1 shadow-2xl z-50 overflow-hidden divide-y divide-slate-900 max-h-48 overflow-y-auto">
+                  {searchResults.map((bookResult, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSelectBookResult(bookResult)}
+                      className="w-full p-2.5 hover:bg-slate-900 flex items-center gap-3 text-left transition text-xs cursor-pointer"
+                    >
+                      {bookResult.cover ? (
+                        <img src={bookResult.cover} className="w-6 h-8 object-cover rounded shadow" alt="" />
+                      ) : (
+                        <div className="w-6 h-8 bg-slate-900 rounded flex items-center justify-center">📖</div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-extrabold text-white truncate">{bookResult.title}</p>
+                        <p className="text-[10px] text-slate-500 truncate">by {bookResult.author}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {searching && (
+                <p className="text-[10px] text-orange-400 font-bold mt-1">Searching metadata...</p>
+              )}
+            </div>
 
-            <div className="space-y-3 pt-2">
+            <div className="border-t border-slate-800/80 my-2" />
+
+            <div className="space-y-3">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-400">Book Title</label>
                 <input
